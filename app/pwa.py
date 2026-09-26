@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -66,3 +68,36 @@ MANIFEST: Dict[str, Any] = {
 def service_worker_source() -> str:
     """متن سرویس‌ورکر از فایل استاتیک خوانده می‌شود تا کش شود."""
     return SERVICE_WORKER_PATH.read_text(encoding="utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# Digital Asset Links — اثبات این‌که APK اندروید همان صاحب این دامنه است
+# --------------------------------------------------------------------------- #
+#
+# کروم وقتی اپ اندروید آدرسی را باز می‌کند، اول `/.well-known/assetlinks.json`
+# همان دامنه را می‌خواند. اگر نام بسته و اثر انگشت گواهی امضا آنجا باشد، صفحه
+# تمام‌صفحه و بدون نوار آدرس باز می‌شود (حس یک اپ واقعی)؛ اگر نباشد، فقط یک
+# نوار آدرس کوچک بالا می‌آید و اپ باز می‌شود.
+#
+# اثر انگشت «راز» نیست؛ داخل خودِ APK منتشر می‌شود. اگر روزی کلید امضا عوض شد،
+# فقط این مقدار را با متغیر محیطی `NESHANE_APP_SHA256` عوض کن.
+APP_PACKAGE = os.environ.get("NESHANE_APP_PACKAGE", "app.neshane").strip()
+APP_SHA256 = os.environ.get(
+    "NESHANE_APP_SHA256",
+    "1B:F2:0E:9A:5B:E3:AD:7B:6A:36:3C:B9:B0:F4:51:11:AC:A5:BD:11:67:66:2D:40:7D:2C:F8:37:0E:0A:84:CA",
+).strip()
+
+
+def assetlinks() -> str:
+    """محتوای `/.well-known/assetlinks.json` بر اساس بسته و اثر انگشت امضا."""
+    statements = [
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": APP_PACKAGE,
+                "sha256_cert_fingerprints": [APP_SHA256],
+            },
+        }
+    ]
+    return json.dumps(statements, ensure_ascii=False)

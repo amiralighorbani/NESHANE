@@ -17,7 +17,8 @@
   NESHANE_GROQ_KEY   / NESHANE_GROQ_MODEL   / NESHANE_GROQ_BASE
   NESHANE_LLM_TIMEOUT    سقف زمانی هر درخواست (ثانیه، پیش‌فرض ۱۵)
   NESHANE_LLM_BREAKER    چند دقیقه یک ارائه‌دهندهٔ خطادار رد شود (پیش‌فرض ۵)
-  NESHANE_LLM_PROXY      آدرس پروکسی (مثل socks5://… یا http://…؛ خالی = بی‌واسطه)
+  NESHANE_LLM_PROXY      آدرس پروکسی (http:// یا socks5://؛ خالی = بی‌واسطه). برای
+                         SOCKS باید بستهٔ اختیاری PySocks نصب باشد
 
 **دربارهٔ فیلترشدن:** هر دو سرویس (Google و Groq) پشت Cloudflare هستند و از بعضی
 شبکه‌ها/کشورها بی‌واسطه پاسخ نمی‌دهند. چنین خطایی اینجا «مسدود» تشخیص داده می‌شود،
@@ -34,6 +35,7 @@ import socket
 import ssl
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -177,7 +179,9 @@ def _mask(key: str) -> str:
 # می‌دهد که معمولاً گذرا است؛ پس ۴۰۳ فقط برای جمینای قطعی حساب می‌شود.
 
 BREAKER_SHORT_SECONDS = float(os.environ.get("NESHANE_LLM_BREAKER_SHORT", "60") or 60)
-PERMANENT_STATUSES = {"http_401", "http_402", "auth", "permission", "forbidden_key"}
+# "config" یعنی تنظیمات (مثلاً پروکسیِ SOCKS بدون PySocks) غلط است؛ تا کاربر
+# درستش نکند هیچ تلاشی جواب نمیدهد، پس مثل خطای دائمی حساب میشود.
+PERMANENT_STATUSES = {"http_401", "http_402", "auth", "permission", "forbidden_key", "config"}
 # خطاهایی که «مسیر شبکه» را نشان می‌دهند: هرگز قطعی حساب نمی‌شوند، چون ممکن است
 # پل ارتباطی (پروکسی/فیلترشکن) هر لحظه روشن شود و باید خودکار برگردیم.
 LINK_STATUSES = {"edge_blocked", "geo_blocked", "network", "timeout"}
@@ -313,18 +317,64 @@ def _mask_proxy(url: str) -> str:
     return f"{scheme}://***@{host}" if scheme else f"***@{host}"
 
 
+# طرح‌هایی که خودِ urllib نمی‌فهمد و به PySocks نیاز دارند.
+SOCKS_SCHEMES = {
+    "socks": "socks5",
+    "socks4": "socks4",
+    "socks4a": "socks4",
+    "socks5": "socks5",
+    "socks5h": "socks5",
+}
+
+
+def proxy_handlers(proxy: str) -> List[Any]:
+    """هندلرهای urllib برای پروکسی (تنها جایی که پروکسی اعمال می‌شود).
+
+    پروکسیِ `http://` و `https://` را خودِ urllib می‌فهمد. اما `socks5://` را
+    نمی‌فهمد و بدون PySocks درخواست شکست می‌خورد؛ پس اینجا صریح چک می‌کنیم و
+    خطای روشن می‌دهیم تا کاربر بداند مشکل از تنظیم است، نه از خودِ سرویس.
+    """
+    if not proxy:
+        # بدون پروکسیِ صریح، متغیرهای استاندارد محیط رعایت می‌شوند؛ هندلر خالی
+        # یعنی «مستقیم وصل شو» و رفتار اپ قابل پیش‌بینی می‌ماند.
+        return [urllib.request.ProxyHandler()]
+
+    scheme = urllib.parse.urlsplit(proxy).scheme.lower()
+    if scheme not in SOCKS_SCHEMES:
+        return [urllib.request.ProxyHandler({"http": proxy, "https": proxy})]
+
+    try:
+        import socks  # noqa: PLC0415  (بستهٔ اختیاری PySocks)
+        from sockshandler import SocksiPyHandler  # noqa: PLC0415
+    except ImportError as exc:
+        raise LLMError(
+            "config",
+            "پروکسی SOCKS تنظیم شده ولی بستهٔ PySocks نصب نیست؛ "
+            "`pip install PySocks` را بزن یا آدرس پروکسی را به http:// عوض کن.",
+        ) from exc
+
+    parsed = urllib.parse.urlsplit(proxy)
+    kinds = {
+        "socks4": socks.PROXY_TYPE_SOCKS4,
+        "socks5": socks.PROXY_TYPE_SOCKS5,
+    }
+    return [
+        SocksiPyHandler(
+            kinds[SOCKS_SCHEMES[scheme]],
+            parsed.hostname or "",
+            parsed.port or 1080,
+            rdns=scheme in ("socks5h", "socks4a"),
+            username=urllib.parse.unquote(parsed.username or "") or None,
+            password=urllib.parse.unquote(parsed.password or "") or None,
+        )
+    ]
+
+
 def _post(url: str, body: Dict[str, Any], headers: Dict[str, str], timeout: float) -> Dict[str, Any]:
     payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(url, data=payload, headers=headers, method="POST")
     proxy, _ = proxy_setting()
-    handlers: List[Any] = []
-    if proxy:
-        handlers.append(urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
-    else:
-        # بدون پروکسیِ صریح، متغیرهای استاندارد محیط رعایت می‌شوند؛ اگر هم هیچ‌کدام
-        # نبود ProxyHandler خالی یعنی «مستقیم وصل شو».
-        handlers.append(urllib.request.ProxyHandler())
-    opener = urllib.request.build_opener(*handlers)
+    opener = urllib.request.build_opener(*proxy_handlers(proxy))
     try:
         with opener.open(request, timeout=timeout) as response:
             raw = response.read().decode("utf-8", "replace")

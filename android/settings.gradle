@@ -1,0 +1,21 @@
+// تنظیمات ریشهٔ پروژهٔ اندروید «نشانه».
+// TWA = Trusted Web Activity؛ همان PWA است که داخل یک پوستهٔ کرومِ بدون نوار آدرس
+// اجرا می‌شود. برای همین نیازی به Gradle wrapper نیست: در CI خودِ Gradle نصب می‌شود.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "neshane"
+include ":app"

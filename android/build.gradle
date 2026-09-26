@@ -1,0 +1,4 @@
+plugins {
+    // نسخهٔ پلاگین اندروید؛ با Gradle 8.7 در CI هم‌خوان است.
+    id "com.android.application" version "8.5.2" apply false
+}

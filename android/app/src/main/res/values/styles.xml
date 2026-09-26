@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- پس‌زمینهٔ پنجره همان رنگ پس‌زمینهٔ PWA است تا هنگام باز شدن، فلش سفید
+         نخوریم. -->
+    <style name="Theme.Neshane" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/backgroundColor</item>
+    </style>
+</resources>

@@ -61,6 +61,7 @@ FEEDBACK_SKIP_PREFIXES = (
     "/health",
     "/sw.js",
     "/manifest",
+    "/.well-known",
     "/feedback",
     "/inbox",
     "/logout",
@@ -173,6 +174,20 @@ def service_worker() -> Response:
 def offline_page() -> Response:
     """صفحهٔ جایگزین وقتی اینترنت قطع است (خودش بدون شبکه کار می‌کند)."""
     return FileResponse(pwa.OFFLINE_PATH, media_type="text/html")
+
+
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+def assetlinks() -> Response:
+    """اثبات مالکیت دامنه برای اپ اندروید (TWA).
+
+    کروم با این فایل مطمئن می‌شود همان APK امضاشده صاحب این دامنه است و بعد صفحه
+    را تمام‌صفحه و بدون نوار آدرس باز می‌کند.
+    """
+    return Response(
+        pwa.assetlinks(),
+        media_type="application/json",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 SESSION_COOKIE = "neshane_session"
 PHONE_COOKIE = "neshane_phone"
