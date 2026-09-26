@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}کد ثبت‌نام — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <a class="back-link" href="/register"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> تغییر شماره</a>
+
+  <div class="flow__mark" style="--accent:#6b4fbb"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+  <h1 class="flow__title">کد ثبت‌نام را وارد کن</h1>
+  <p class="flow__lead">کد شش‌رقمی به شمارهٔ <span class="ltr">{{ phone | fa }}</span> فرستاده شد. با تأیید همین کد، حساب ساخته می‌شود و بعد از آن نام کاربری و رمزت را انتخاب می‌کنی.</p>
+
+  {% if errors %}
+    <div class="alert anim-shake">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form class="form" method="post" action="/verify" id="otpForm">
+    <div class="otp" dir="ltr" role="group" aria-label="کد شش‌رقمی ورود">
+      <input class="otp__input" id="otp1" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="رقم اول" autofocus>
+      <input class="otp__input" id="otp2" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="رقم دوم">
+      <input class="otp__input" id="otp3" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="رقم سوم">
+      <input class="otp__input" id="otp4" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="رقم چهارم">
+      <input class="otp__input" id="otp5" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="رقم پنجم">
+      <input class="otp__input" id="otp6" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="رقم ششم">
+    </div>
+    <p class="otp__hint">ارقام را از چپ به راست وارد کن؛ ارقام فارسی هم پذیرفته می‌شود.</p>
+    <input type="hidden" name="code" id="otpValue">
+    <button class="btn btn--primary btn--block" type="submit" id="otpSubmit" disabled>
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> تأیید شماره
+    </button>
+  </form>
+
+  <a class="btn btn--ghost btn--block" href="/inbox">
+    <i class="fa-solid fa-comment-dots" aria-hidden="true"></i> دیدن پیامک‌ها (شبیه‌سازی)
+  </a>
+
+  {% if code_hint %}
+    <div class="hint-card anim-in">
+      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+      <span>در این نسخه پیامکی نمی‌رود؛ کد فعال: <b class="ltr">{{ code_hint | fa }}</b></span>
+      <button class="link-btn" type="button" data-copy="{{ code_hint }}"><i class="fa-solid fa-copy" aria-hidden="true"></i> کپی کد</button>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/register" class="resend">
+    <input type="hidden" name="phone" value="{{ phone }}">
+    <button class="link-btn" type="submit"><i class="fa-solid fa-rotate" aria-hidden="true"></i> ارسال دوبارهٔ کد</button>
+  </form>
+</section>
+{% endblock %}

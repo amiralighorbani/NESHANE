@@ -1,0 +1,184 @@
+{# پوستهٔ موبایلی نشانه: قاب ثابت، نوار بالا، ناوبری پایین و لایه‌های انیمیشن #}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f5f2">
+  <title>{% block title %}نشانه{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+
+  {# --- PWA: نصب روی صفحهٔ اصلی گوشی --- #}
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon-180.png">
+  <meta name="application-name" content="نشانه">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="نشانه">
+  <meta name="msapplication-TileColor" content="#6b4fbb">
+
+  <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ ASSET_VERSION() }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="app-shell">
+    <div class="app-frame">
+      <header class="topbar">
+        {% block topbar %}
+        <a class="topbar__brand" href="/">
+          <span class="brand-mark"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
+          <span class="brand-text">نشانه</span>
+        </a>
+        <div class="topbar__actions">
+          {% if user %}
+            {% if not user.password_hash %}
+              <a class="icon-btn" href="/inbox" aria-label="پیامک‌ها"><i class="fa-solid fa-comment-dots" aria-hidden="true"></i></a>
+            {% endif %}
+            <a class="icon-btn" href="/profile" aria-label="پروفایل"><i class="fa-solid fa-user" aria-hidden="true"></i></a>
+          {% else %}
+            <a class="pill pill--ghost" href="/login"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> ورود</a>
+          {% endif %}
+        </div>
+        {% endblock %}
+      </header>
+
+      <main class="screen" id="screen">
+        {% block content %}{% endblock %}
+      </main>
+
+      {% block bottom_nav %}
+      <nav class="dock" aria-label="ناوبری اصلی">
+        {% set nav = [
+          {'href': '/', 'label': 'خانه', 'icon': 'fa-solid fa-house', 'key': 'home'},
+          {'href': '/journey', 'label': 'فال', 'icon': 'fa-solid fa-wand-magic-sparkles', 'key': 'journey'},
+          {'href': '/life', 'label': 'زندگی', 'icon': 'fa-solid fa-hourglass-half', 'key': 'life'},
+          {'href': '/tests', 'label': 'تست‌ها', 'icon': 'fa-solid fa-brain', 'key': 'tests'},
+          {'href': '/profile', 'label': 'من', 'icon': 'fa-solid fa-user', 'key': 'profile'}
+        ] %}
+        {% for item in nav %}
+          <a class="dock__item {% if active == item.key %}is-active{% endif %}" href="{{ item.href }}">
+            <i class="{{ item.icon }}" aria-hidden="true"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+      {% endblock %}
+    </div>
+  </div>
+
+  {# --- کارت نصب: فقط بار اول، به‌صورت یک نوار کوچک بالای نوار پایین --- #}
+  <div class="install-card" id="installCard" hidden>
+    <span class="install-card__icon" aria-hidden="true"><i class="fa-solid fa-arrow-down-to-bracket"></i></span>
+    <span class="install-card__body">
+      <strong>نشانه را نصب کن</strong>
+      <small id="installHint">یک آیکون روی صفحهٔ اصلی می‌آید و مثل یک اپ باز می‌شود.</small>
+    </span>
+    <span class="install-card__actions">
+      <button class="install-card__go" type="button" id="installGo">نصب</button>
+      <button class="install-card__close" type="button" id="installClose" aria-label="بستن">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </span>
+  </div>
+
+  {# --- پاپ‌اپ امتیاز و نظر: فقط وقتی کاربر ۲۴ ساعت غایب بوده و تازه برگشته --- #}
+  {% if feedback_prompt %}
+  <div class="rate-modal" id="rateModal" data-rate-modal>
+    <div class="rate-modal__backdrop" data-rate-close></div>
+    <div class="rate-modal__card" role="dialog" aria-modal="true" aria-labelledby="rateTitle">
+      <button class="rate-modal__x" type="button" data-rate-close aria-label="بستن">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+
+      <div class="rate-modal__head">
+        <span class="rate-modal__spark"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
+        <p class="rate-modal__hello">
+          {% if feedback_prompt.name %}سلام {{ feedback_prompt.name }}؛ {% endif %}{% if feedback_prompt.idle_days >= 1 %}چند وقته ندیدمت{% else %}خوش برگشتی{% endif %}
+        </p>
+        <h2 class="rate-modal__title" id="rateTitle" data-rate-title>چند لحظه وقتت را بگیریم؟</h2>
+        <p class="rate-modal__body" data-rate-body>
+          نشانه را برای همین دغدغه‌های تو ساخته‌ایم؛ هر امتیاز و هر جمله‌ای که بنویسی،
+          مستقیم روی فال‌ها، تست‌ها و لحن برنامه اثر می‌گذارد. حتی یک نکتهٔ کوچک می‌تواند
+          تجربهٔ صدها نفر بعدی را بهتر کند.
+        </p>
+      </div>
+
+      <form class="rate-form" method="post" action="/feedback" id="rateForm">
+        <input type="hidden" name="back" value="{{ request.url.path }}">
+
+        {% set star_words = {1: 'ضعیف', 2: 'قابل‌به‌تر', 3: 'خوب', 4: 'خیلی خوب', 5: 'عالی'} %}
+        <fieldset class="rate-stars" data-rate-step="1">
+          <legend class="rate-stars__legend">۱. از ۱ تا ۵، چه امتیازی به نشانه می‌دهی؟</legend>
+          <div class="rate-stars__row">
+            {% for star in [5, 4, 3, 2, 1] %}
+              <label class="rate-star">
+                <input type="radio" name="rating" value="{{ star }}" required>
+                <span class="rate-star__icon"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
+                <span class="rate-star__num">{{ star | fa }}</span>
+                <span class="rate-star__word">{{ star_words[star] }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="rate-comment" data-rate-step="2" hidden>
+          <legend class="rate-stars__legend">۲. حالا یک جمله از خودت بنویس</legend>
+          <p class="rate-comment__hint">
+            چه چیزی به‌دستت آورد؟ کجا گیج شدی؟ چه چیزی را دلت می‌خواست ببینی و ندیدی؟
+          </p>
+          <label class="field">
+            <span class="field__control field__control--area">
+              <textarea class="field__input field__input--area" name="comment" rows="4" maxlength="1200"
+                        placeholder="مثلاً: خوانشِ کارت‌های تاروت خیلی دقیق بود، ولی دوست دارم فال دوستی هم اضافه شود…"></textarea>
+            </span>
+          </label>
+          <button class="btn btn--primary btn--block" type="submit" data-rate-submit>
+            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> ثبت و ادامه
+          </button>
+          <button class="rate-comment__skip" type="submit" name="comment" value="">
+            بعداً می‌نویسم، فقط امتیاز را ثبت کن
+          </button>
+        </fieldset>
+
+        <p class="rate-form__note">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          نظرت فقط برای تیم نشانه دیده می‌شود و هیچ‌وقت روی نام تو منتشر نمی‌شود.
+        </p>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {# تبلیغ پاپ‌اپ: محتوا از /api/ad می‌آید؛ فقط اگر تبلیغی برای نمایش باشد باز می‌شود. #}
+  <div class="ad-modal" id="adModal" hidden role="dialog" aria-modal="true" aria-label="پیشنهاد ویژه">
+    <div class="ad-modal__backdrop" data-ad-close></div>
+    <div class="ad-modal__card" role="document">
+      <header class="ad-modal__head">
+        <span class="ad-modal__label"><i class="fa-solid fa-rectangle-ad" aria-hidden="true"></i> پیشنهاد ویژه</span>
+        <button class="ad-modal__x" type="button" data-ad-close aria-label="بستن">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div class="ad-modal__media" data-ad-media></div>
+
+      <div class="ad-modal__body">
+        <h3 class="ad-modal__title" data-ad-title></h3>
+        <p class="ad-modal__text" data-ad-text></p>
+        <a class="btn btn--primary btn--block" data-ad-cta hidden target="_blank" rel="noopener nofollow"></a>
+        <div class="ad-modal__foot">
+          <button class="btn btn--soft btn--block" type="button" data-ad-skip hidden>رد کردن</button>
+          <button class="ad-modal__dismiss" type="button" data-ad-dismiss hidden>این تبلیغ را دیگر نشان نده</button>
+        </div>
+        <p class="ad-modal__timer" data-ad-timer></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="region" aria-label="پیام‌های نشانه"></div>
+  <script type="application/json" id="flashData">{{ toasts | tojson }}</script>
+  <div class="veil" id="veil" aria-hidden="true"></div>
+  <script src="/static/js/app.js?v={{ ASSET_VERSION() }}" defer></script>
+</body>
+</html>

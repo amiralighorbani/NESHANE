@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}انتخاب فال — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  {% include "partials/stepper.html" %}
+
+  <h1 class="flow__title">کدام فال؟</h1>
+  <p class="flow__lead">یک روش را انتخاب کن؛ در دو صفحهٔ بعد موضوع و نیت را می‌گیریم.</p>
+
+  <form class="form" method="post" action="/journey/method">
+    {% for group in METHOD_GROUPS %}
+      <div class="group">
+        <h2 class="group__title"><i class="{{ group.icon }}" aria-hidden="true"></i> {{ group.title }}</h2>
+        <div class="card-list">
+          {% for key in group.members %}
+            {% set method = METHODS[key] %}
+            <button class="method-card method-card--tap {% if draft.kind == method.key %}is-selected{% endif %}"
+                    type="submit" name="method" value="{{ method.key }}" style="--accent: {{ method.accent }}">
+              <span class="method-card__icon"><i class="{{ method.icon }}" aria-hidden="true"></i></span>
+              <span class="method-card__body">
+                <strong>{{ method.label }}</strong>
+                <small>{{ method.tagline }}</small>
+                <small class="method-card__steps">
+                  {% for step in method.steps %}{{ step }}{% if not loop.last %} • {% endif %}{% endfor %}
+                </small>
+              </span>
+              <span class="method-card__chevron"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></span>
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </form>
+
+  <a class="btn btn--ghost btn--block" href="/profile"><i class="fa-solid fa-user-pen" aria-hidden="true"></i> ویرایش اطلاعات تولد</a>
+</section>
+{% endblock %}

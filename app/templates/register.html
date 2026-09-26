@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}ثبت‌نام — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <a class="back-link" href="/"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> بازگشت</a>
+
+  <div class="flow__mark" style="--accent:#6b4fbb"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></div>
+  <h1 class="flow__title">ثبت‌نام با شمارهٔ تلفن</h1>
+  <p class="flow__lead">
+    شماره‌ات را بنویس تا یک کد شش‌رقمی برایت بفرستیم. بعد از تأیید کد، نام کاربری و رمز عبورت را
+    انتخاب می‌کنی و از آن به بعد با همان‌ها وارد می‌شوی. در این نسخه، کد در «پیامک‌های من» نمایش داده می‌شود.
+  </p>
+
+  {% if errors %}
+    <div class="alert anim-shake">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form class="form" method="post" action="/register" autocomplete="on">
+    <label class="field">
+      <span class="field__label">شمارهٔ موبایل</span>
+      <span class="field__control">
+        <i class="fa-solid fa-phone field__icon" aria-hidden="true"></i>
+        <input class="field__input field__input--ltr" type="tel" name="phone" value="{{ phone }}"
+               inputmode="numeric" placeholder="09123456789" dir="ltr" required>
+      </span>
+    </label>
+    <button class="btn btn--primary btn--block" type="submit">
+      <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> ارسال کد ثبت‌نام
+    </button>
+  </form>
+
+  <a class="btn btn--ghost btn--block" href="/login">
+    <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> قبلاً ثبت‌نام کرده‌ام (ورود با نام کاربری)
+  </a>
+
+  <p class="fine-print">
+    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+    اطلاعات تو فقط در دیتابیس همین دستگاه ذخیره می‌شود. هر شماره فقط یک حساب دارد و بعد از کامل‌شدن
+    ثبت‌نام، هیچ‌کس با آن شماره وارد حساب تو نمی‌شود؛ ورود فقط با رمز انجام می‌شود.
+  </p>
+</section>
+{% endblock %}

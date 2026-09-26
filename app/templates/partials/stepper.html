@@ -1,0 +1,11 @@
+{# ریل مراحل سفر فال: موضوع، نیت، نتیجه #}
+<div class="stepper" aria-label="مراحل سفر">
+  {% set labels = {'1': 'روش', '2': 'موضوع', '3': 'نیت'} %}
+  {% for number in [1, 2, 3] %}
+    {% set value = number | string %}
+    <span class="stepper__dot {% if step > number %}is-done{% elif step == number %}is-active{% endif %}">
+      {% if step > number %}<i class="fa-solid fa-check" aria-hidden="true"></i>{% else %}{{ number | fa }}{% endif %}
+    </span>
+    {% if number < 3 %}<span class="stepper__bar {% if step > number %}is-done{% endif %}"></span>{% endif %}
+  {% endfor %}
+</div>

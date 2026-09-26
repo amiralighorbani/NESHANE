@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block title %}رویدادها — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>رویدادها</h1>
+    <p>هر ورود، ثبت‌نام، فال و تستی که در سیستم انجام شده است</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/events.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> ۱۵۰ رویداد آخر</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>رویداد</th><th>کاربر</th><th>زمان</th></tr></thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td class="mono">
+              {% if event.name.startswith('admin_login_failed') %}
+                <span class="badge badge--danger">{{ event.name }}</span>
+              {% elif event.name.startswith('admin') %}
+                <span class="badge badge--warn">{{ event.name }}</span>
+              {% else %}
+                {{ event.name }}
+              {% endif %}
+            </td>
+            <td>
+              {% if event.user_id %}
+                <a href="{{ admin_path }}users/{{ event.user_id }}">{{ event.user_label }}</a>
+              {% else %}
+                <span class="muted">{{ event.user_label }}</span>
+              {% endif %}
+            </td>
+            <td class="nowrap muted">{{ event.created_label }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="muted">رویدادی ثبت نشده است.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-route" aria-hidden="true"></i> آخرین پیش‌نویس‌های سفر</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>کاربر</th><th>روش</th><th>موضوع</th><th>نیت</th><th>به‌روزرسانی</th></tr></thead>
+      <tbody>
+        {% for draft in drafts %}
+          <tr>
+            <td><a href="{{ admin_path }}users/{{ draft.user_id }}">{{ draft.user_name or draft.phone or ('#' ~ draft.user_id) }}</a></td>
+            <td>{{ METHODS[draft.kind].label if draft.kind in METHODS else '—' }}</td>
+            <td>{{ TOPICS[draft.topic].label if draft.topic in TOPICS else '—' }}</td>
+            <td>{{ draft.intent or '—' }}</td>
+            <td class="nowrap muted">{{ stamp(draft.updated_at) }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="muted">پیش‌نویسی ذخیره نشده است.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

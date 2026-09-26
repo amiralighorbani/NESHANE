@@ -1,0 +1,131 @@
+{% extends "admin/base.html" %}
+{% block title %}پیش‌نمایش تبلیغ — پنل نشانه{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>پیش‌نمایش: {{ ad.title }}</h1>
+    <p class="muted">این همان چیزی است که کاربر می‌بیند؛ پایین‌تر آمار و رویدادهای اخیر همان تبلیغ است.</p>
+  </div>
+  <div class="head__actions">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ads?ad_id={{ ad.id }}#adForm">
+      <i class="fa-solid fa-pen" aria-hidden="true"></i> ویرایش
+    </a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ads">
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i> بازگشت به فهرست
+    </a>
+  </div>
+</div>
+
+<div class="grid grid--2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-eye" aria-hidden="true"></i> نمای کاربر</h2>
+
+    <div class="ad-stage">
+      <div class="ad-stage__media">
+        {% if ad.media_kind == 'video' %}
+          <video src="{{ ad.media_url }}" muted playsinline controls autoplay loop></video>
+        {% else %}
+          <img src="{{ ad.media_url }}" alt="{{ ad.title }}">
+        {% endif %}
+        <span class="ad-stage__badge">{{ ad.kind_label }}</span>
+      </div>
+
+      <div class="ad-stage__body">
+        <strong class="ad-stage__title">{{ ad.title }}</strong>
+        {% if ad.body %}<p class="ad-stage__text">{{ ad.body }}</p>{% endif %}
+
+        <div class="ad-stage__actions">
+          {% if ad.link_url %}
+            <a class="btn" href="{{ ad.link_url }}" target="_blank" rel="noopener nofollow">
+              <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+              {{ ad.cta_label or 'بیشتر بدانید' }}
+            </a>
+          {% endif %}
+          {% if ad.skip_allowed %}
+            <span class="btn btn--ghost" aria-disabled="true">
+              <i class="fa-solid fa-forward" aria-hidden="true"></i>
+              رد کردن{% if ad.skip_after %} پس از {{ ad.skip_after | fa }} ثانیه{% endif %}
+            </span>
+          {% else %}
+            <span class="btn btn--ghost" aria-disabled="true">
+              <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+              بدون ردکردن ({{ ad.hold_seconds | fa }} ثانیه)
+            </span>
+          {% endif %}
+        </div>
+        <small class="muted small">
+          زمان نمایش: {{ ad.hold_seconds | fa }} ثانیه{% if ad.dismiss_days %} • «دیگر نشان نده» تا {{ ad.dismiss_days | fa }} روز{% endif %}
+        </small>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-sliders" aria-hidden="true"></i> تنظیمات و وضعیت</h2>
+    <dl class="kv kv--wide">
+      <div><dt>وضعیت الان</dt><dd>{{ ad.state.label }}</dd></div>
+      <div><dt>جای نمایش</dt><dd>{{ ad.placement_label }}</dd></div>
+      <div><dt>سهمیهٔ روزانه</dt><dd>{{ (ad.max_per_day | fa) if ad.max_per_day else 'بی‌سقف' }}</dd></div>
+      <div><dt>فایل</dt><dd>{{ ad.media_name or '—' }} ({{ ad.media_size }})</dd></div>
+      <div><dt>شروع</dt><dd>{{ ad.starts_label or 'از همین حالا' }}</dd></div>
+      <div><dt>پایان</dt><dd>{{ ad.ends_label or 'بدون پایان' }}</dd></div>
+      <div><dt>وزن</dt><dd>{{ ad.weight | fa }}</dd></div>
+      <div><dt>فعال</dt><dd>{{ 'بله' if ad.active else 'خیر' }}</dd></div>
+    </dl>
+
+    <h4 style="margin:16px 0 8px;font-size:13px"><i class="fa-solid fa-clock" aria-hidden="true"></i> پنجره‌های نمایش</h4>
+    <ul class="plain-list">
+      {% for part in ad.window %}<li>{{ part }}</li>{% endfor %}
+    </ul>
+
+    <h4 style="margin:16px 0 8px;font-size:13px"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i> آمار ۳۰ روز</h4>
+    <div class="cards">
+      <div class="stat"><span class="stat__label">نمایش</span><span class="stat__value">{{ stats.impressions | fa }}</span></div>
+      <div class="stat"><span class="stat__label">کلیک</span><span class="stat__value">{{ stats.clicks | fa }}</span></div>
+      <div class="stat"><span class="stat__label">نرخ کلیک</span><span class="stat__value">{{ stats.ctr | fa }}٪</span></div>
+      <div class="stat"><span class="stat__label">ردکردن</span><span class="stat__value">{{ stats.skips | fa }}</span></div>
+    </div>
+
+    {% if daily %}
+      {% set peak = (daily | map(attribute='impressions') | max) or 1 %}
+      <div class="bars">
+        {% for day in daily %}
+          <div class="bars__item">
+            <span class="bars__value">{{ day.impressions | fa }}</span>
+            <span class="bars__stack"><i style="height: {{ (100 * day.impressions / peak) | round(1) }}%"></i></span>
+            <small>{{ day.day[5:] }}</small>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="note">هنوز رویدادی برای این تبلیغ ثبت نشده.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-list-check" aria-hidden="true"></i> آخرین رویدادها</h2>
+  {% if recent %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>زمان</th><th>رویداد</th><th>بیننده</th></tr></thead>
+        <tbody>
+          {% for event in recent %}
+            <tr>
+              <td><small class="muted">{{ stamp(event.created_at) }}</small></td>
+              <td>
+                {% set labels = {'impression': 'نمایش', 'click': 'کلیک', 'skip': 'ردکردن', 'dismiss': 'دیگر نشان نده'} %}
+                {{ labels.get(event.kind, event.kind) }}
+              </td>
+              <td><span class="mono ltr">{{ event.actor }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="note">رویدادی ثبت نشده است.</p>
+  {% endif %}
+</section>
+{% endblock %}

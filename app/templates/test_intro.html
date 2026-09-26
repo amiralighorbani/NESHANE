@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ test.label }} — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <a class="back-link" href="/tests"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> همهٔ تست‌ها</a>
+
+  <div class="flow__mark" style="--accent: {{ test.accent }}"><i class="{{ test.icon }}" aria-hidden="true"></i></div>
+  <h1 class="flow__title">{{ test.label }}</h1>
+  <p class="flow__lead">{{ test.about }}</p>
+
+  <div class="spec-grid">
+    <div class="spec"><i class="fa-regular fa-clock" aria-hidden="true"></i><strong>{{ test.minutes }} دقیقه</strong><span>زمان تقریبی</span></div>
+    <div class="spec"><i class="fa-solid fa-list-ol" aria-hidden="true"></i><strong>{{ question_count | fa }} پرسش</strong><span>کوتاه و سریع</span></div>
+    <div class="spec"><i class="fa-solid fa-tags" aria-hidden="true"></i><strong>{{ test.count | fa }} نتیجه</strong><span>تحلیل کامل</span></div>
+  </div>
+
+  {% if user %}
+    <form method="post" action="/tests/{{ test.key }}/start">
+      <button class="btn btn--primary btn--block" type="submit" data-reveal style="--accent: {{ test.accent }}">
+        <i class="fa-solid fa-play" aria-hidden="true"></i> شروع تست
+      </button>
+    </form>
+    {% if open_attempt %}
+      <a class="btn btn--ghost btn--block" href="/tests/{{ test.key }}/q/{{ open_attempt.answers | length }}?a={{ open_attempt.id }}">
+        <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> ادامهٔ تست نیمه‌تمام
+      </a>
+    {% endif %}
+    {% if last_result %}
+      <a class="btn btn--ghost btn--block" href="/tests/{{ test.key }}/result/{{ last_result.id }}">
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> دیدن نتیجهٔ قبلی
+      </a>
+    {% endif %}
+  {% else %}
+    <a class="btn btn--primary btn--block" href="/register">
+      <i class="fa-solid fa-user-plus" aria-hidden="true"></i> ثبت‌نام برای شروع تست
+    </a>
+    <a class="btn btn--ghost btn--block" href="/login">
+      <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> قبلاً ثبت‌نام کرده‌ام (ورود)
+    </a>
+  {% endif %}
+
+  <p class="fine-print"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> جواب درست یا غلط وجود ندارد؛ اولین انتخابِ دلت را بزن.</p>
+</section>
+{% endblock %}

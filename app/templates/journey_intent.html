@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}نیت — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  {% include "partials/stepper.html" %}
+
+  <div class="method-badge" style="--accent: {{ method.accent }}">
+    <i class="{{ method.icon }}" aria-hidden="true"></i> {{ method.label }}
+  </div>
+
+  <h1 class="flow__title">نیتت را بگو</h1>
+  <p class="flow__lead">یک جمله کوتاه از آن‌چه در دل داری؛ لازم نیست کامل باشد. اگر نخواستی، خالی بگذار.</p>
+
+  {% if errors %}
+    <div class="alert anim-shake">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <div class="intent-summary">
+    <span><i class="{{ topic.icon }}" aria-hidden="true"></i> {{ topic.label }}</span>
+    <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ user.name }}</span>
+  </div>
+
+  <form class="form" method="post" action="/journey/intent" id="intentForm">
+    <label class="field">
+      <span class="field__label">نیت</span>
+      <span class="field__control field__control--area">
+        <textarea class="field__input field__input--area" name="intent" maxlength="180"
+                  placeholder="مثلاً: دربارهٔ تصمیمی که برای کارم دارم">{{ intent }}</textarea>
+      </span>
+    </label>
+    <button class="btn btn--primary btn--block" type="submit" data-reveal>
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> گشودن فالم
+    </button>
+  </form>
+</section>
+{% endblock %}

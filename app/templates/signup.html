@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}نام کاربری و رمز — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <div class="stepper" aria-label="مراحل ثبت‌نام">
+    <span class="stepper__dot is-done"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+    <span class="stepper__bar is-done"></span>
+    <span class="stepper__dot is-active">۱</span>
+    <span class="stepper__bar"></span>
+    <span class="stepper__dot">۲</span>
+    <span class="stepper__bar"></span>
+    <span class="stepper__dot">۳</span>
+  </div>
+
+  <div class="flow__mark" style="--accent:#6b4fbb"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></div>
+  <h1 class="flow__title">نام کاربری و رمز عبور</h1>
+  <p class="flow__lead">
+    شمارهٔ <span class="ltr">{{ user.phone | mask_phone }}</span> تأیید شد. حالا نام کاربری و رمزت را
+    انتخاب کن؛ از این به بعد فقط با همین دو مورد وارد می‌شوی و هیچ‌کس با شمارهٔ تلفن به حسابت راه ندارد.
+  </p>
+
+  {% if errors %}
+    <div class="alert anim-shake">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form class="form" method="post" action="/signup" autocomplete="on">
+    <label class="field">
+      <span class="field__label">نام کاربری <b class="field__req">*</b></span>
+      <span class="field__control">
+        <i class="fa-solid fa-at field__icon" aria-hidden="true"></i>
+        <input class="field__input field__input--ltr" type="text" name="username" value="{{ values.username }}"
+               placeholder="negarm" dir="ltr" minlength="3" maxlength="24"
+               autocapitalize="none" autocomplete="username" required>
+      </span>
+    </label>
+    <p class="field__hint">۳ تا ۲۴ نویسهٔ انگلیسی: حرف، رقم، نقطه یا زیرخط. بزرگی و کوچکی حروف مهم نیست.</p>
+
+    <label class="field">
+      <span class="field__label">رمز عبور <b class="field__req">*</b></span>
+      <span class="field__control">
+        <i class="fa-solid fa-lock field__icon" aria-hidden="true"></i>
+        <input class="field__input field__input--ltr" type="password" name="password"
+               placeholder="••••••••" dir="ltr" autocomplete="new-password" required>
+      </span>
+    </label>
+
+    <label class="field">
+      <span class="field__label">تکرار رمز عبور <b class="field__req">*</b></span>
+      <span class="field__control">
+        <i class="fa-solid fa-lock field__icon" aria-hidden="true"></i>
+        <input class="field__input field__input--ltr" type="password" name="confirm"
+               placeholder="••••••••" dir="ltr" autocomplete="new-password" required>
+      </span>
+    </label>
+    <p class="field__hint">حداقل ۸ نویسه. رمز بهتر است ترکیبی از حرف و رقم باشد و با نام کاربری یکی نباشد.</p>
+
+    <button class="btn btn--primary btn--block" type="submit">
+      <i class="fa-solid fa-check" aria-hidden="true"></i> ثبت نام کاربری و رمز
+    </button>
+  </form>
+
+  <p class="fine-print">
+    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+    رمز عبور با PBKDF2-SHA256 (۲۶۰٬۰۰۰ تکرار) هش می‌شود؛ خودِ رمز جایی ذخیره نمی‌شود.
+  </p>
+</section>
+{% endblock %}

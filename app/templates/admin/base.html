@@ -1,0 +1,72 @@
+{# پوستهٔ پنل مدیریت: نوار کنارِ تیره + ناحیهٔ کار روشن #}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}پنل مدیریت نشانه{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/admin.css?v={{ ASSET_VERSION() }}">
+</head>
+<body>
+  <div class="shell">
+    <aside class="side">
+      <div class="side__brand">
+        <i class="fa-solid fa-star" aria-hidden="true"></i>
+        <span>
+          نشانه
+          <small>پنل مدیریت</small>
+        </span>
+      </div>
+
+      <nav class="side__nav" aria-label="ناوبری پنل">
+        <a href="{{ admin_path }}" class="{% if active == 'dashboard' %}is-active{% endif %}">
+          <i class="fa-solid fa-chart-simple" aria-hidden="true"></i> داشبورد
+        </a>
+        <a href="{{ admin_path }}users" class="{% if active == 'users' %}is-active{% endif %}">
+          <i class="fa-solid fa-users" aria-hidden="true"></i> کاربران
+          <span class="count">{{ user_total | fa }}</span>
+        </a>
+        <a href="{{ admin_path }}readings" class="{% if active == 'readings' %}is-active{% endif %}">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> خوانش‌ها
+        </a>
+        <a href="{{ admin_path }}fortunes" class="{% if active == 'fortunes' %}is-active{% endif %}">
+          <i class="fa-solid fa-book-open" aria-hidden="true"></i> استخر فال
+        </a>
+        <a href="{{ admin_path }}ai" class="{% if active in ['ai', 'prompts'] %}is-active{% endif %}">
+          <i class="fa-solid fa-robot" aria-hidden="true"></i> هوش مصنوعی
+        </a>
+        <a href="{{ admin_path }}ads" class="{% if active == 'ads' %}is-active{% endif %}">
+          <i class="fa-solid fa-rectangle-ad" aria-hidden="true"></i> تبلیغات
+          {% if ad_active %}<span class="count">{{ ad_active | fa }}</span>{% endif %}
+        </a>
+        <a href="{{ admin_path }}feedback" class="{% if active == 'feedback' %}is-active{% endif %}">
+          <i class="fa-solid fa-star" aria-hidden="true"></i> امتیاز و نظر
+        </a>
+        <a href="{{ admin_path }}audit" class="{% if active == 'audit' %}is-active{% endif %}">
+          <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> رویدادها
+        </a>
+      </nav>
+
+      <div class="side__foot">
+        <form method="post" action="{{ admin_path }}logout">
+          <button class="btn btn--ghost btn--sm btn--block" type="submit">
+            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> خروج
+          </button>
+        </form>
+        <p class="side__note">
+          این پنل روی یک مسیر مخفی است و در هیچ صفحه‌ای لینک نشده. هر ورود و خروج در «رویدادها» ثبت می‌شود.
+        </p>
+      </div>
+    </aside>
+
+    <main class="main">
+      {% if error and error not in ('title', 'link', 'date', 'media', 'notfound') %}<div class="alert alert--error">{{ error }}</div>{% endif %}
+      {% if ok and not (active == 'ads') %}<div class="alert alert--ok">{{ ok }}</div>{% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

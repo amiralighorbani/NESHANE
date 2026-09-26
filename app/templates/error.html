@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{# صفحهٔ خطای یکدست: هر خطای سرور با ظاهر خودِ نشانه دیده می‌شود، نه صفحهٔ خشک
+   مرورگر. رنگ و آیکون را مسیر خطا می‌فرستد و توست، علت را انیمیشنی می‌گوید. #}
+{% block title %}{{ heading or "یک مشکل کوچک" }} — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow flow--center anim-in">
+  <div class="flow__mark" style="--accent: {{ accent or '#b57613' }}">
+    <i class="{{ icon or 'fa-solid fa-triangle-exclamation' }}" aria-hidden="true"></i>
+  </div>
+  <h1 class="flow__title">{{ heading or "یک مشکل کوچک پیش آمد" }}</h1>
+  <p class="flow__lead">{{ lead or "درخواست تو به سرانجام نرسید." }}</p>
+
+  {% if note %}
+  <div class="card card--soft" style="margin-block: 6px 14px">
+    <p style="margin: 0; font-size: 12.5px; line-height: 2; color: var(--ink-2)">
+      <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+      {{ note }}
+    </p>
+  </div>
+  {% endif %}
+
+  <a class="btn btn--primary btn--block" href="/">
+    <i class="fa-solid fa-house" aria-hidden="true"></i> بازگشت به خانه
+  </a>
+  <a class="btn btn--ghost btn--block" href="/journey">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال تازه بگیر
+  </a>
+  {% if not user %}
+    <a class="btn btn--ghost btn--block" href="/login">
+      <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> ورود به حساب
+    </a>
+  {% endif %}
+</section>
+{% endblock %}

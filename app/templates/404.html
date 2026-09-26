@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}پیدا نشد — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow flow--center anim-in">
+  <div class="flow__mark" style="--accent:#8a8f98"><i class="fa-solid fa-compass" aria-hidden="true"></i></div>
+  <h1 class="flow__title">این نشانه پیدا نشد</h1>
+  <p class="flow__lead">شاید مسیر را اشتباه آمده‌ای یا این فال منقضی شده است.</p>
+  <a class="btn btn--primary btn--block" href="/"><i class="fa-solid fa-house" aria-hidden="true"></i> بازگشت به خانه</a>
+  <a class="btn btn--ghost btn--block" href="/journey"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال تازه</a>
+</section>
+{% endblock %}

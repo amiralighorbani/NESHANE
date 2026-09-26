@@ -1,0 +1,113 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'کارت فال تازه' if mode == 'new' else 'ویرایش کارت فال' }} — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>{{ 'کارت فال تازه' if mode == 'new' else 'ویرایش کارت فال' }}</h1>
+    <p>
+      {% if mode == 'new' %}
+        کارت تازه ساخته می‌شود و کنار کارت‌های آماده در استخر قرار می‌گیرد.
+      {% else %}
+        تغییرها روی نسخهٔ اصلی اعمال می‌شود و از همین حالا به کاربران داده می‌شود.
+      {% endif %}
+    </p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}fortunes">بازگشت به استخر</a>
+  </div>
+</div>
+
+{% if error == 'required' %}<div class="alert alert--error">حداقل یک مصراع و متن تعبیر لازم است.</div>{% endif %}
+
+<div class="card fortune-form">
+  <form method="post" action="{{ admin_path }}fortunes/save">
+    <input type="hidden" name="key" value="{{ card.key }}">
+
+    {% if mode == 'edit' %}
+      <p class="note" style="margin-bottom:14px">
+        شناسه: <span class="mono">{{ card.key }}</span>
+        {% if card.source_label %}<span class="badge badge--muted" style="margin-inline-start:8px">{{ card.source_label }}</span>{% endif %}
+        {% if card.hidden %}<span class="badge badge--danger" style="margin-inline-start:6px">پنهان</span>{% endif %}
+      </p>
+    {% endif %}
+
+    <div class="grid grid--2">
+      <label class="field">
+        <span>عنوان کارت</span>
+        <input type="text" name="title" value="{{ card.title }}" maxlength="80" placeholder="مثلاً غزل شمارهٔ ۴۹۰">
+      </label>
+      <label class="field">
+        <span>مضمون (اختیاری)</span>
+        <input type="text" name="theme_label" value="{{ card.theme_label }}" list="themeOptions" maxlength="60" placeholder="مثلاً عشق و دل‌بستگی">
+        <datalist id="themeOptions">
+          {% for label in themes %}<option value="{{ label }}"></option>{% endfor %}
+        </datalist>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>ابیات — هر مصراع در یک خط (۴ خط = مطلع + مقطع)</span>
+      <textarea name="verses" rows="5" required placeholder="صلاح کار کجا و من خراب کجا&#10;ببین تفاوت ره کز کجاست تا به کجا">{{ card.verses | join('\n') }}</textarea>
+    </label>
+
+    <label class="field">
+      <span>تعبیر</span>
+      <textarea name="interpretation" rows="4" required placeholder="متن تعبیری که به کاربر نشان داده می‌شود…">{{ card.interpretation }}</textarea>
+    </label>
+
+    <label class="field">
+      <span>راهنمای عملی</span>
+      <textarea name="guidance" rows="2" placeholder="یک کار کوچک و عملی برای امروز…">{{ card.guidance }}</textarea>
+    </label>
+
+    <label class="field">
+      <span>کلیدواژه‌ها — با کاما جدا کن</span>
+      <input type="text" name="keywords" value="{{ card.keywords | join('، ') }}" placeholder="دل‌بستگی، عشق، دل">
+    </label>
+
+    <div class="row">
+      <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> ذخیرهٔ کارت</button>
+      <a class="btn btn--ghost" href="{{ admin_path }}fortunes">انصراف</a>
+    </div>
+  </form>
+</div>
+
+{% if mode == 'edit' and not card.hidden %}
+  <div class="card" style="margin-top:14px">
+    <div class="card__head"><h2><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> کنار گذاشتن این کارت</h2></div>
+    <p class="note" style="margin-bottom:12px">
+      اگر کارت آمادهٔ پروژه باشد پنهان می‌شود (و بعداً قابل بازگرداندن است)؛ اگر خودت ساخته باشی، کامل حذف می‌شود.
+    </p>
+    <form method="post" action="{{ admin_path }}fortunes/{{ card.key }}/delete"
+          onsubmit="return confirm('مطمئنی؟');">
+      <button class="btn btn--danger" type="submit">
+        <i class="fa-solid {% if card.builtin %}fa-eye-slash{% else %}fa-trash{% endif %}" aria-hidden="true"></i>
+        {% if card.builtin %}پنهان‌کردن کارت{% else %}حذف کامل کارت{% endif %}
+      </button>
+    </form>
+  </div>
+{% endif %}
+
+{% if mode == 'edit' and card.builtin and overridden %}
+  <div class="card" style="margin-top:14px">
+    <div class="card__head"><h2><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> برگشت به متن اصلی</h2></div>
+    <p class="note" style="margin-bottom:12px">
+      این کارت آمادهٔ پروژه است و ویرایش شده؛ با این دکمه همهٔ تغییرها پاک می‌شود و متن اصلی برمی‌گردد.
+    </p>
+    <form method="post" action="{{ admin_path }}fortunes/{{ card.key }}/revert"
+          onsubmit="return confirm('به متن اصلی برگردد؟');">
+      <button class="btn btn--ghost" type="submit"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> بازگردانی به نسخهٔ اصلی</button>
+    </form>
+  </div>
+{% endif %}
+
+{% if mode == 'edit' and card.hidden %}
+  <div class="card" style="margin-top:14px">
+    <div class="card__head"><h2><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> این کارت پنهان است</h2></div>
+    <form method="post" action="{{ admin_path }}fortunes/{{ card.key }}/restore">
+      <button class="btn" type="submit"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> بازگرداندن به استخر</button>
+    </form>
+  </div>
+{% endif %}
+{% endblock %}

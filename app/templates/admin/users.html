@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% block title %}کاربران — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>کاربران</h1>
+    <p>{{ total | fa }} کاربر ثبت‌شده{% if q %} — نتیجهٔ جست‌وجوی «{{ q }}»{% endif %}</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/users.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV</a>
+  </div>
+</div>
+
+<div class="card card--flat" style="margin-bottom:14px">
+  <form class="row" method="get" action="{{ admin_path }}users">
+    <input type="text" name="q" value="{{ q }}" placeholder="جست‌وجو در نام، شماره یا شهر…" style="max-width:340px">
+    <button class="btn" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> جست‌وجو</button>
+    {% if q %}<a class="btn btn--ghost" href="{{ admin_path }}users">پاک‌کردن</a>{% endif %}
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>نام و نام خانوادگی</th>
+          <th>موبایل</th>
+          <th>تولد</th>
+          <th>شهر</th>
+          <th class="num">فال</th>
+          <th class="num">تست</th>
+          <th>پروفایل</th>
+          <th>ثبت</th>
+          <th>آخرین ورود</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <td class="num">{{ user.id | fa }}</td>
+            <td>{{ (user.name ~ ' ' ~ (user.family or '')) | trim or '—' }}</td>
+            <td class="num mono">{{ user.phone | fa }}{% if user.username %}<br><span class="ltr">@{{ user.username }}</span>{% endif %}</td>
+            <td class="nowrap">
+              {% if user.jy %}{{ user.jd | fa }} {{ MONTHS_FA[user.jm - 1] }} {{ user.jy | fa }}{% else %}—{% endif %}
+            </td>
+            <td>{{ user.city or '—' }}</td>
+            <td class="num">{{ user.reading_count | fa }}</td>
+            <td class="num">{{ user.attempt_count | fa }}</td>
+            <td>
+              {% if user.complete %}<span class="badge badge--ok">کامل</span>{% else %}<span class="badge badge--warn">ناقص</span>{% endif %}
+            </td>
+            <td class="nowrap muted">{{ user.created_label }}</td>
+            <td class="nowrap muted">{{ user.last_login_label }}</td>
+            <td class="nowrap"><a class="btn btn--sm btn--ghost" href="{{ admin_path }}users/{{ user.id }}">پرونده</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="11" class="muted">کاربری با این مشخصات پیدا نشد.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if pages > 1 %}
+  <div class="row" style="margin-top:14px">
+    {% if page_number > 1 %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users?q={{ q }}&page_number={{ page_number - 1 }}">قبلی</a>
+    {% endif %}
+    <span class="muted">صفحهٔ {{ page_number | fa }} از {{ pages | fa }}</span>
+    {% if page_number < pages %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users?q={{ q }}&page_number={{ page_number + 1 }}">بعدی</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

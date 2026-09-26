@@ -1,0 +1,308 @@
+{% extends "admin/base.html" %}
+{% block title %}تبلیغات — پنل نشانه{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>تبلیغات</h1>
+    <p class="muted">
+      عکس یا ویدیوی چندثانیه‌ای را آپلود کن، لینک بگذار و دقیق مشخص کن چه زمانی نمایش داده شود،
+      چند بار در روز دیده شود و کاربر بتواند ردش کند یا نه.
+    </p>
+  </div>
+  <div class="head__actions">
+    {% if editing %}<a class="btn btn--ghost btn--sm" href="{{ admin_path }}ads"><i class="fa-solid fa-plus" aria-hidden="true"></i> تبلیغ تازه</a>{% endif %}
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/ads.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV</a>
+  </div>
+</div>
+
+{% if error == 'title' %}<div class="alert alert--error">عنوان تبلیغ لازم است.</div>{% endif %}
+{% if error == 'link' %}<div class="alert alert--error">لینک باید با http:// یا https:// شروع شود.</div>{% endif %}
+{% if error == 'date' %}<div class="alert alert--error">{{ error_text or 'تاریخ‌ها را درست وارد کن.' }}</div>{% endif %}
+{% if error == 'media' %}<div class="alert alert--error">{{ error_text or 'فایل رسانه پذیرفته نشد.' }}</div>{% endif %}
+{% if error == 'notfound' %}<div class="alert alert--error">تبلیغی با این شناسه پیدا نشد.</div>{% endif %}
+
+{% if ok == 'created' %}<div class="alert alert--ok">تبلیغ ساخته شد و از همین حالا طبق زمان‌بندی نمایش داده می‌شود.</div>{% endif %}
+{% if ok == 'saved' %}<div class="alert alert--ok">تغییرات تبلیغ ذخیره شد.</div>{% endif %}
+{% if ok == 'paused' %}<div class="alert alert--ok">تبلیغ خاموش شد؛ دیگر نمایش داده نمی‌شود.</div>{% endif %}
+{% if ok == 'resumed' %}<div class="alert alert--ok">تبلیغ روشن شد.</div>{% endif %}
+{% if ok == 'deleted' %}<div class="alert alert--ok">تبلیغ و فایل رسانه‌اش حذف شد.</div>{% endif %}
+
+<div class="cards">
+  <div class="stat"><span class="stat__label">همهٔ تبلیغ‌ها</span><span class="stat__value">{{ totals.all | fa }}</span></div>
+  <div class="stat"><span class="stat__label">الان فعال</span><span class="stat__value">{{ totals.active | fa }}</span></div>
+  <div class="stat"><span class="stat__label">نمایش (۳۰ روز)</span><span class="stat__value">{{ totals.impressions | fa }}</span></div>
+  <div class="stat"><span class="stat__label">کلیک (۳۰ روز)</span><span class="stat__value">{{ totals.clicks | fa }}</span></div>
+</div>
+
+<section class="panel" id="adForm">
+  <h2>
+    {% if editing %}<i class="fa-solid fa-pen" aria-hidden="true"></i> ویرایش تبلیغ «{{ editing.title }}»
+    {% else %}<i class="fa-solid fa-plus" aria-hidden="true"></i> تبلیغ تازه{% endif %}
+  </h2>
+
+  <form method="post" action="{{ admin_path }}ads/save" enctype="multipart/form-data" data-ad-form>
+    <input type="hidden" name="id" value="{{ editing.id if editing else 0 }}">
+
+    <div class="grid grid--2">
+      <label class="field">
+        <span>عنوان تبلیغ <b>*</b></span>
+        <input type="text" name="title" maxlength="80" required
+               value="{{ editing.title if editing else '' }}" placeholder="مثلاً: ۲۰٪ تخفیف روی فال تاروت">
+      </label>
+      <label class="field">
+        <span>متن کوتاه (اختیاری)</span>
+        <input type="text" name="body" maxlength="300"
+               value="{{ editing.body if editing else '' }}" placeholder="یک جمله که کاربر را ترغیب کند">
+      </label>
+    </div>
+
+    <div class="grid grid--2">
+      <label class="field">
+        <span>لینک مقصد (اختیاری)</span>
+        <input class="ltr" type="text" name="link_url" maxlength="400" dir="ltr"
+               value="{{ editing.link_url if editing else '' }}" placeholder="https://example.com/offer">
+        <small class="muted small">اگر خالی بماند، تبلیغ کلیک‌شدنی نیست.</small>
+      </label>
+      <label class="field">
+        <span>متن دکمه</span>
+        <input type="text" name="cta_label" maxlength="40"
+               value="{{ editing.cta_label if editing else '' }}" placeholder="بیشتر بدانید">
+      </label>
+    </div>
+
+    <div class="field-block">
+      <span class="field-block__label">فایل تبلیغ {% if not editing %}<b>*</b>{% endif %}</span>
+      <div class="upload" data-ad-upload>
+        <label class="upload__drop">
+          <input type="file" name="media" accept="image/*,video/*" data-ad-file>
+          <span class="upload__icon"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></span>
+          <span class="upload__text">برای انتخاب فایل کلیک کن</span>
+          <small class="muted small">عکس تا {{ image_limit_mb | fa }} مگابایت • ویدیو تا {{ media_limit_mb | fa }} مگابایت (چند ثانیه)</small>
+        </label>
+        <div class="upload__preview" data-ad-preview hidden></div>
+      </div>
+
+      {% if editing and editing.media_url %}
+        <div class="upload__current">
+          {% if editing.media_kind == 'video' %}
+            <video src="{{ editing.media_url }}" muted playsinline controls preload="metadata"></video>
+          {% else %}
+            <img src="{{ editing.media_url }}" alt="{{ editing.title }}" loading="lazy">
+          {% endif %}
+          <div>
+            <strong>{{ editing.media_name or 'فایل فعلی' }}</strong>
+            <small class="muted small">{{ editing.kind_label }} • {{ editing.media_size }}</small>
+            <small class="muted small">برای جای‌گزینی، فایل تازه انتخاب کن؛ فایل قبلی خودکار پاک می‌شود.</small>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="grid grid--2">
+      <label class="field">
+        <span>کجا نمایش داده شود؟</span>
+        <select name="placement">
+          {% for key in placement_order %}
+            <option value="{{ key }}" {% if editing and editing.placement == key %}selected{% endif %}>{{ placements[key].label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>چند ثانیه بماند؟</span>
+        <input type="number" name="hold_seconds" min="1" max="180"
+               value="{{ editing.hold_seconds if editing else 8 }}">
+        <small class="muted small">برای ویدیو، تا پایان ویدیو هم صبر می‌شود.</small>
+      </label>
+    </div>
+
+    <fieldset class="fieldset">
+      <legend>ردکردن تبلیغ</legend>
+      <div class="grid grid--2">
+        <label class="check">
+          <input type="checkbox" name="skip_allowed" value="1" {% if not editing or editing.skip_allowed %}checked{% endif %}>
+          <span>کاربر بتواند تبلیغ را رد کند</span>
+        </label>
+        <label class="field">
+          <span>از چند ثانیه بعد؟</span>
+          <input type="number" name="skip_after" min="0" max="60" value="{{ editing.skip_after if editing else 3 }}">
+          <small class="muted small">۰ = بی‌درنگ. اگر تیک بالا نخورد، کاربر تا پایان این مدت منتظر می‌ماند.</small>
+        </label>
+      </div>
+      <label class="field">
+        <span>گزینهٔ «دیگر نشان نده» چند روز پنهانش کند؟</span>
+        <input type="number" name="dismiss_days" min="0" max="365" value="{{ editing.dismiss_days if editing else 0 }}">
+        <small class="muted small">۰ = این گزینه به کاربر نشان داده نمی‌شود.</small>
+      </label>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <legend>زمان‌بندی نمایش</legend>
+      <div class="grid grid--3">
+        <label class="field">
+          <span>از ساعت</span>
+          <select name="hour_from">
+            {% for hour in range(0, 25) %}
+              <option value="{{ hour }}" {% if (editing.hour_from if editing else 0) | int == hour %}selected{% endif %}>{{ hour | fa }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>تا ساعت</span>
+          <select name="hour_to">
+            {% for hour in range(0, 25) %}
+              <option value="{{ hour }}" {% if (editing.hour_to if editing else 24) | int == hour %}selected{% endif %}>{{ hour | fa }}</option>
+            {% endfor %}
+          </select>
+          <small class="muted small">مثلاً ۱۸ تا ۲۳. بازهٔ شب‌رو هم می‌شود: ۲۲ تا ۲.</small>
+        </label>
+        <label class="field">
+          <span>حداکثر نمایش در روز برای هر نفر</span>
+          <input type="number" name="max_per_day" min="0" max="50" value="{{ editing.max_per_day if editing else 3 }}">
+          <small class="muted small">۰ = بی‌سقف.</small>
+        </label>
+      </div>
+
+      <div class="field-block">
+        <span class="field-block__label">روزهای هفته</span>
+        <div class="checks">
+          {% for name, icon in weekdays %}
+            <label class="check check--chip">
+              <input type="checkbox" name="weekdays" value="{{ loop.index0 }}"
+                     {% if not editing or not editing.weekday_list or loop.index0 in editing.weekday_list %}checked{% endif %}>
+              <span>{{ name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        <small class="muted small">اگر هیچ روزی تیک نخورد، یعنی همهٔ روزها.</small>
+      </div>
+
+      <div class="grid grid--2">
+        <label class="field">
+          <span>تاریخ شروع (اختیاری)</span>
+          <span class="date-row">
+            <input type="number" name="start_jy" placeholder="۱۴۰۵" value="{{ editing.start_parts[0] if editing and editing.start_parts else '' }}">
+            <input type="number" name="start_jm" placeholder="۱" min="1" max="12" value="{{ editing.start_parts[1] if editing and editing.start_parts else '' }}">
+            <input type="number" name="start_jd" placeholder="۱" min="1" max="31" value="{{ editing.start_parts[2] if editing and editing.start_parts else '' }}">
+          </span>
+          <small class="muted small">{% if editing and editing.starts_label %}فعلاً: {{ editing.starts_label }}{% else %}خالی = از همین حالا{% endif %}</small>
+        </label>
+        <label class="field">
+          <span>تاریخ پایان (اختیاری)</span>
+          <span class="date-row">
+            <input type="number" name="end_jy" placeholder="۱۴۰۵" value="{{ editing.end_parts[0] if editing and editing.end_parts else '' }}">
+            <input type="number" name="end_jm" placeholder="۱۲" min="1" max="12" value="{{ editing.end_parts[1] if editing and editing.end_parts else '' }}">
+            <input type="number" name="end_jd" placeholder="۳۰" min="1" max="31" value="{{ editing.end_parts[2] if editing and editing.end_parts else '' }}">
+          </span>
+          <small class="muted small">{% if editing and editing.ends_label %}فعلاً: {{ editing.ends_label }}{% else %}خالی = بدون پایان{% endif %}</small>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="grid grid--2">
+      <label class="field">
+        <span>اولویت (وزن)</span>
+        <input type="number" name="weight" min="0" max="100" value="{{ editing.weight if editing else 1 }}">
+        <small class="muted small">عدد بیشتر = جلوتر. تبلیغی که امروز کمتر دیده شده هم جلو می‌افتد.</small>
+      </label>
+      <label class="check check--boxed">
+        <input type="checkbox" name="active" value="1" {% if not editing or editing.active %}checked{% endif %}>
+        <span>فعال باشد (طبق زمان‌بندی نمایش داده شود)</span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn" type="submit">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        {% if editing %}ذخیرهٔ تغییرات{% else %}ساخت تبلیغ{% endif %}
+      </button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-rectangle-list" aria-hidden="true"></i> فهرست تبلیغ‌ها ({{ rows | length | fa }})</h2>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table table--ads">
+      <thead>
+        <tr>
+          <th>تبلیغ</th>
+          <th>وضعیت</th>
+          <th>زمان نمایش</th>
+          <th>ردکردن</th>
+          <th>نمایش / کلیک</th>
+          <th>کارها</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            <div class="ad-cell">
+              <div class="ad-thumb">
+                {% if row.media_kind == 'video' %}
+                  <video src="{{ row.media_url }}" muted playsinline preload="metadata"></video>
+                {% else %}
+                  <img src="{{ row.media_url }}" alt="{{ row.title }}" loading="lazy">
+                {% endif %}
+              </div>
+              <div class="ad-cell__meta">
+                <strong>{{ row.title }}</strong>
+                <small class="muted small">{{ row.kind_label }} • {{ row.placement_label }} • {{ row.media_size }}</small>
+                {% if row.link_url %}<small class="muted small ltr">{{ row.link_url }}</small>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="tag tag--{{ 'ok' if row.state.key == 'active' else ('bad' if row.state.key in ('off', 'expired') else 'warn') }}">
+              <i class="{{ row.state.icon }}" aria-hidden="true"></i> {{ row.state.label }}
+            </span>
+          </td>
+          <td>
+            <div class="window-list">
+              {% for part in row.window %}<small class="muted small">{{ part }}</small>{% endfor %}
+            </div>
+          </td>
+          <td>
+            <small class="muted small">{{ row.skip_label }}</small>
+            {% if row.dismiss_days %}<small class="muted small">«دیگر نشان نده»: {{ row.dismiss_days | fa }} روز</small>{% endif %}
+          </td>
+          <td>
+            <strong>{{ row.stats.impressions | fa }}</strong>
+            <small class="muted small">کلیک {{ row.stats.clicks | fa }} • نرخ {{ row.stats.ctr | fa }}٪</small>
+            {% if row.stats.skips %}<small class="muted small">ردکردن {{ row.stats.skips | fa }}</small>{% endif %}
+          </td>
+          <td>
+            <div class="row">
+              <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ads/{{ row.id }}/preview" title="پیش‌نمایش">
+                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+              </a>
+              <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ads?ad_id={{ row.id }}#adForm" title="ویرایش">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              </a>
+              <form method="post" action="{{ admin_path }}ads/{{ row.id }}/toggle">
+                <button class="btn btn--ghost btn--sm" type="submit" title="{{ 'خاموش‌کردن' if row.active else 'روشن‌کردن' }}">
+                  <i class="fa-solid {{ 'fa-circle-pause' if row.active else 'fa-circle-play' }}" aria-hidden="true"></i>
+                </button>
+              </form>
+              <form method="post" action="{{ admin_path }}ads/{{ row.id }}/delete" onsubmit="return confirm('این تبلیغ و فایلش حذف شود؟');">
+                <button class="btn btn--danger btn--sm" type="submit" title="حذف">
+                  <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="note">هنوز تبلیغی نساخته‌ای. فرم بالا را پر کن تا اولین تبلیغ راه بیفتد.</p>
+  {% endif %}
+</section>
+
+<script src="/static/js/admin-ads.js?v={{ ASSET_VERSION() }}" defer></script>
+{% endblock %}

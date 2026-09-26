@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}موضوع فال — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  {% include "partials/stepper.html" %}
+
+  <div class="method-badge" style="--accent: {{ method.accent }}">
+    <i class="{{ method.icon }}" aria-hidden="true"></i> {{ method.label }}
+  </div>
+
+  <h1 class="flow__title">فالت دربارهٔ چیست؟</h1>
+  <p class="flow__lead">موضوع، لحن خوانش را تغییر می‌دهد؛ دقیق‌تر انتخاب کنی، نشانه روشن‌تر است.</p>
+
+  <form class="form" method="post" action="/journey/topic">
+    <div class="topic-grid">
+      {% for key in TOPIC_ORDER %}
+        {% set topic = TOPICS[key] %}
+        <button class="topic-card {% if draft.topic == key %}is-selected{% endif %}" type="submit" name="topic" value="{{ key }}">
+          <span class="topic-card__icon"><i class="{{ topic.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ topic.label }}</strong>
+          <small>{{ topic.focus }}</small>
+        </button>
+      {% endfor %}
+    </div>
+  </form>
+
+  <a class="btn btn--ghost btn--block" href="/journey"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> تغییر روش فال</a>
+</section>
+{% endblock %}

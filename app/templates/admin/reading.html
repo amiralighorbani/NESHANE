@@ -1,0 +1,132 @@
+{% extends "admin/base.html" %}
+{% block title %}خوانش {{ reading.token }} — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>{{ reading.headline }}</h1>
+    <p>
+      {{ reading.method_label }} • {{ reading.topic_label }} • {{ created_label }}
+    </p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users/{{ owner.id }}">پروندهٔ {{ owner.name or owner.phone }}</a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}readings">فهرست خوانش‌ها</a>
+    <form method="post" action="{{ admin_path }}readings/{{ token }}/delete">
+      <input type="hidden" name="user_id" value="{{ owner.id }}">
+      <button class="btn btn--danger btn--sm" type="submit"><i class="fa-solid fa-trash" aria-hidden="true"></i> حذف خوانش</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid grid--3">
+  <div class="card stat">
+    <span class="stat__value">{{ reading.overall | fa }}٪</span>
+    <span class="stat__label">{{ reading.overall_label }}</span>
+    <span class="stat__hint">{{ reading.overall_note }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value" style="font-size:19px">{{ reading.mood.label }}</span>
+    <span class="stat__label">حال‌وهوای خوانش</span>
+    <span class="stat__hint">{{ reading.mood.line }}</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value" style="font-size:19px">{{ reading.sign.name }}</span>
+    <span class="stat__label">برج — {{ reading.birth_label }}</span>
+    <span class="stat__hint">سیّارهٔ روز: {{ reading.day_planet.planet }}</span>
+  </div>
+</div>
+
+{% if reading.intent %}
+  <div class="card" style="margin-top:14px">
+    <div class="card__head"><h2><i class="fa-solid fa-comment-dots" aria-hidden="true"></i> نیت کاربر</h2></div>
+    <p style="margin:0">«{{ reading.intent }}»</p>
+  </div>
+{% endif %}
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head"><h2><i class="fa-solid fa-align-right" aria-hidden="true"></i> خلاصهٔ خوانش</h2></div>
+  <p style="margin:0">{{ reading.summary }}</p>
+  {% if reading.power_note %}<p class="note" style="margin-top:10px">{{ reading.power_note }}</p>{% endif %}
+</div>
+
+{% for block in reading.blocks %}
+  <div class="card" style="margin-top:14px">
+    <div class="card__head">
+      <h2><i class="{{ block.icon }}" aria-hidden="true"></i> {{ block.title }}</h2>
+      {% if block.lead %}<span class="badge">{{ block.lead }}</span>{% endif %}
+    </div>
+    {% if block.lines %}
+      <ul class="verse">
+        {% for line in block.lines %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% if block.body %}<p>{{ block.body }}</p>{% endif %}
+    {% if block.meta %}
+      <dl class="profile-grid">
+        {% for label, value in block.meta.items() %}
+          <div class="item"><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+        {% endfor %}
+      </dl>
+    {% endif %}
+    {% if block.note %}<p class="note" style="margin-top:10px"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ block.note }}</p>{% endif %}
+  </div>
+{% endfor %}
+
+<div class="grid grid--2" style="margin-top:14px">
+  <div class="card">
+    <div class="card__head"><h2><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> انرژی پنج حوزه</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>حوزه</th><th class="num">امتیاز</th><th></th><th>یادداشت</th></tr></thead>
+        <tbody>
+          {% for energy in reading.energies %}
+            <tr>
+              <td class="nowrap"><i class="{{ energy.icon }}" aria-hidden="true"></i> {{ energy.label }}</td>
+              <td class="num">{{ energy.value | fa }}</td>
+              <td style="width:110px"><div class="bar"><span style="width: {{ energy.value }}%"></span></div></td>
+              <td class="muted">{{ energy.note }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head"><h2><i class="fa-solid fa-list-check" aria-hidden="true"></i> کارهای امروز / امروز نه</h2></div>
+    <div class="grid grid--2">
+      <div>
+        <p class="muted">انجام بده</p>
+        <ul>{% for item in reading.dos %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      <div>
+        <p class="muted">به تعویق بینداز</p>
+        <ul>{% for item in reading.donts %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+
+    <div class="card__head" style="margin-top:14px"><h2><i class="fa-solid fa-gem" aria-hidden="true"></i> اقلام شانس</h2></div>
+    <dl class="profile-grid">
+      {% for item in reading.lucky %}
+        <div class="item"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+      {% endfor %}
+    </dl>
+
+    {% if reading.affirmation %}
+      <p class="note" style="margin-top:12px"><i class="fa-solid fa-quote-right" aria-hidden="true"></i> {{ reading.affirmation }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-code" aria-hidden="true"></i> دادهٔ خام (JSON)</h2>
+    <span class="muted mono">token={{ token }} • seed={{ reading.seed }}</span>
+  </div>
+  <details>
+    <summary>نمایش کامل payload</summary>
+    <pre>{{ raw }}</pre>
+  </details>
+</div>
+{% endblock %}

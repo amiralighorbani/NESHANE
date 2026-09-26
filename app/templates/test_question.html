@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ test.label }} — پرسش {{ index + 1 }}{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow flow--quiz anim-in" style="--accent: {{ test.accent }}">
+  <div class="quiz-head">
+    <a class="back-link" href="/tests/{{ test.key }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i> بستن</a>
+    <span class="quiz-head__count">{{ (index + 1) | fa }} / {{ total | fa }}</span>
+  </div>
+
+  <div class="progress"><i style="width: {{ progress }}%"></i></div>
+
+  <span class="quiz-test"><i class="{{ test.icon }}" aria-hidden="true"></i> {{ test.label }}</span>
+  <h1 class="quiz-question">{{ question.text }}</h1>
+
+  <form class="option-list" method="post" action="/tests/{{ test.key }}/q/{{ index }}">
+    <input type="hidden" name="a" value="{{ attempt_id }}">
+    {% for option in question.options %}
+      <button class="option" type="submit" name="choice" value="{{ loop.index0 }}">
+        <span class="option__marker">{{ loop.index | fa }}</span>
+        <span class="option__text">{{ option.text }}</span>
+        <i class="fa-solid fa-chevron-left option__chevron" aria-hidden="true"></i>
+      </button>
+    {% endfor %}
+  </form>
+
+  <p class="fine-print"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> گزینه‌ای را بزن که بیشتر شبیه توست، نه آن‌که بهتر به‌نظر می‌رسد.</p>
+</section>
+{% endblock %}

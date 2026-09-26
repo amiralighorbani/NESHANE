@@ -1,0 +1,257 @@
+{% extends "admin/base.html" %}
+{% block title %}هوش مصنوعی — پنل نشانه{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>مانیتورینگ هوش مصنوعی</h1>
+    <p class="muted">
+      هر تماس با مدل زبانی — موفق یا ناموفق — اینجا ثبت می‌شود: ارائه‌دهنده، مدل، تأخیر،
+      توکن‌ها، متن خطا و اینکه پاسخ از ارائه‌دهندهٔ اصلی آمده یا پشتیبان.
+    </p>
+  </div>
+  <div class="head__actions">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ai/prompts">
+      <i class="fa-solid fa-file-shield" aria-hidden="true"></i> دستورهای سیستم
+    </a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/llm.csv">
+      <i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV
+    </a>
+  </div>
+</div>
+
+{% if not health.enabled %}
+  <div class="alert alert--error">
+    لایهٔ مدل زبانی با متغیر محیطی <code>NESHANE_LLM=0</code> خاموش شده است؛ در نتیجه
+    خوانش شخصی، تفسیر تست و پیام پاپ‌اپ از متن‌های آمادهٔ خود برنامه استفاده می‌کنند.
+  </div>
+{% endif %}
+
+{% for breaker in breakers %}
+  {% if breaker.open %}
+    <div class="alert alert--error">
+      مدارِ <strong>{{ breaker.provider }}</strong> باز است ({{ breaker.reason }}) —
+      {{ breaker.age_seconds | fa }} ثانیه پیش. تا پایان این پنجره، درخواست‌ها مستقیم
+      به ارائه‌دهندهٔ بعدی می‌روند.
+    </div>
+  {% endif %}
+{% endfor %}
+
+<div class="cards">
+  <article class="stat">
+    <span class="stat__label">کل تماس‌ها</span>
+    <strong class="stat__value">{{ stats.total | fa }}</strong>
+    <span class="stat__hint">۲۴ ساعت اخیر: {{ stats.today | fa }}</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">نرخ موفقیت</span>
+    <strong class="stat__value">{{ stats.success_rate | fa }}٪</strong>
+    <span class="stat__hint">موفق {{ stats.ok | fa }} • ناموفق {{ stats.failed | fa }}</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">میانگین تأخیر</span>
+    <strong class="stat__value">{{ stats.avg_latency | fa }}<small>ms</small></strong>
+    <span class="stat__hint">بیشترین: {{ stats.max_latency | fa }}ms</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">توکن مصرفی</span>
+    <strong class="stat__value">{{ stats.tokens | fa }}</strong>
+    <span class="stat__hint">
+      ورودی {{ stats.prompt_tokens | fa }} • خروجی {{ stats.completion_tokens | fa }}
+    </span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">پاسخ از پشتیبان</span>
+    <strong class="stat__value">{{ stats.fallback_ok | fa }}</strong>
+    <span class="stat__hint">از ارائه‌دهندهٔ اصلی: {{ stats.primary_ok | fa }}</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">رد‌شده با مدار باز</span>
+    <strong class="stat__value">{{ stats.skipped | fa }}</strong>
+    <span class="stat__hint">بدون صرف زمان کاربر</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">کاربران بهره‌مند</span>
+    <strong class="stat__value">{{ stats.users | fa }}</strong>
+    <span class="stat__hint">تماس‌های ۲۴ ساعت: {{ stats.today_tokens | fa }} توکن</span>
+  </article>
+</div>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-server" aria-hidden="true"></i> ارائه‌دهنده‌ها</h2>
+  <div class="providers">
+    {% for provider in providers %}
+      <article class="provider provider--{{ provider.role }}">
+        <header>
+          <strong>{{ provider.label }}</strong>
+          <span class="chip">{{ 'ارائه‌دهندهٔ اصلی' if provider.role == 'primary' else 'پشتیبان' }}</span>
+        </header>
+        <dl class="kv">
+          <div><dt>وضعیت</dt><dd>{{ 'کلید تنظیم شده' if provider.configured else 'بدون کلید' }}</dd></div>
+          <div><dt>کلید</dt><dd class="ltr">{{ provider.key_hint }}</dd></div>
+          <div><dt>آدرس</dt><dd class="ltr ellipsis">{{ provider.base }}</dd></div>
+          <div><dt>مدل‌ها</dt><dd class="ltr">{{ provider.models | join('، ') }}</dd></div>
+          <div><dt>تماس‌ها</dt><dd>{{ provider.stats.total | fa }}</dd></div>
+          <div><dt>نرخ موفقیت</dt><dd>{{ provider.stats.success_rate | fa }}٪</dd></div>
+          <div><dt>توکن</dt><dd>{{ provider.stats.tokens | fa }}</dd></div>
+          <div><dt>میانگین تأخیر</dt><dd>{{ provider.stats.avg_latency | fa }}ms</dd></div>
+          <div><dt>آخرین تماس</dt><dd>{{ stamp(provider.stats.last_at) if provider.stats.last_at else '—' }}</dd></div>
+        </dl>
+        {% if provider.stats.last_error %}
+          <p class="provider__error">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            آخرین خطا ({{ provider.stats.last_error.status }}):
+            {{ provider.stats.last_error.error }}
+          </p>
+        {% endif %}
+        <p class="muted small">{{ provider.note }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% if daily %}
+<section class="panel">
+  <h2><i class="fa-solid fa-chart-column" aria-hidden="true"></i> مصرف چهارده روز گذشته</h2>
+  <div class="bars">
+    {% for day in daily %}
+      <div class="bars__item" title="{{ day.total | fa }} تماس — {{ day.tokens | fa }} توکن">
+        <span class="bars__stack" style="height: {{ day.height }}%">
+          <i style="height: {{ (100 * day.ok / day.total) | round if day.total else 0 }}%"></i>
+        </span>
+        <small>{{ day.label }}</small>
+        <span class="bars__value">{{ day.total | fa }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="muted small">بخش روشنِ هر ستون تماس‌های موفق و بخش تیره خطاها هستند.</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2><i class="fa-solid fa-layer-group" aria-hidden="true"></i> مصرف به تفکیک کاربرد</h2>
+  <table class="table">
+    <thead>
+      <tr><th>کاربرد</th><th>تماس</th><th>موفق</th><th>موفقیت</th><th>میانگین تأخیر</th><th>توکن</th></tr>
+    </thead>
+    <tbody>
+      {% for row in kind_rows %}
+        <tr>
+          <td><i class="{{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>
+          <td>{{ row.total | fa }}</td>
+          <td>{{ row.ok | fa }}</td>
+          <td>{{ row.success_rate | fa }}٪</td>
+          <td>{{ row.avg_latency | fa }}ms</td>
+          <td>{{ row.tokens | fa }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="muted">هنوز تماسی ثبت نشده است.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-microchip" aria-hidden="true"></i> مصرف به تفکیک مدل</h2>
+  <table class="table">
+    <thead>
+      <tr><th>ارائه‌دهنده</th><th>مدل</th><th>تماس</th><th>موفق</th><th>موفقیت</th><th>میانگین تأخیر</th><th>توکن</th></tr>
+    </thead>
+    <tbody>
+      {% for row in model_rows %}
+        <tr>
+          <td>{{ row.provider_label or row.provider }}</td>
+          <td class="ltr">{{ row.model }}</td>
+          <td>{{ row.total | fa }}</td>
+          <td>{{ row.ok | fa }}</td>
+          <td>{{ row.success_rate | fa }}٪</td>
+          <td>{{ row.avg_latency | fa }}ms</td>
+          <td>{{ row.tokens | fa }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted">هنوز مدلی پاسخ نداده است.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-list" aria-hidden="true"></i> آخرین تماس‌ها</h2>
+
+  <div class="filters">
+    <a class="chip {% if not only_failures and not filter_kind and not filter_provider %}chip--on{% endif %}"
+       href="{{ admin_path }}ai">همه</a>
+    <a class="chip {% if only_failures %}chip--on{% endif %}" href="{{ admin_path }}ai?failures=1">فقط ناموفق‌ها</a>
+    {% for row in prompt_rows %}
+      <a class="chip {% if filter_kind == row.key %}chip--on{% endif %}"
+         href="{{ admin_path }}ai?kind={{ row.key }}">{{ row.label }}</a>
+    {% endfor %}
+    {% for provider in providers %}
+      <a class="chip {% if filter_provider == provider.key %}chip--on{% endif %}"
+         href="{{ admin_path }}ai?provider={{ provider.key }}">{{ provider.label }}</a>
+    {% endfor %}
+  </div>
+
+  <table class="table table--tight">
+    <thead>
+      <tr><th>زمان</th><th>کاربرد</th><th>ارائه‌دهنده / مدل</th><th>نتیجه</th><th>تأخیر</th><th>توکن</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for call in calls %}
+        <tr class="{% if not call.ok %}row--bad{% endif %}">
+          <td class="small">{{ call.created_label }}</td>
+          <td><i class="{{ call.kind_icon }}" aria-hidden="true"></i> {{ call.kind_label }}</td>
+          <td>
+            <span class="ltr small">{{ call.provider }} / {{ call.model }}</span>
+            {% if call.role == 'fallback' %}<span class="chip chip--tiny">پشتیبان</span>{% endif %}
+          </td>
+          <td>
+            {% if call.ok %}
+              <span class="tag tag--ok">موفق</span>
+            {% else %}
+              <span class="tag tag--bad">{{ call.status }}</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ call.latency_ms | fa }}ms</td>
+          <td class="small">{{ call.total_tokens | fa }}</td>
+          <td>
+            <details class="more">
+              <summary>جزئیات</summary>
+              <div class="more__body">
+                {% if call.error %}<p class="error-text">{{ call.error }}</p>{% endif %}
+                <p class="muted small">
+                  تلاش {{ call.attempt | fa }} • تلاش مجدد {{ call.retries | fa }} •
+                  ورودی {{ call.prompt_chars | fa }} نویسه • خروجی {{ call.response_chars | fa }} نویسه
+                </p>
+                {% if call.prompt_preview %}
+                  <h4>پرامپت فرستاده‌شده</h4>
+                  <pre class="code">{{ call.prompt_preview }}</pre>
+                {% endif %}
+                {% if call.response_preview %}
+                  <h4>پاسخ مدل</h4>
+                  <pre class="code">{{ call.response_preview }}</pre>
+                {% endif %}
+              </div>
+            </details>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted">تماسی با این فیلتر پیدا نشد.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">در مجموع {{ total_calls | fa }} تماس با این فیلتر ثبت شده است.</p>
+</section>
+
+<section class="panel panel--quiet">
+  <h2><i class="fa-solid fa-broom" aria-hidden="true"></i> پاک‌سازی لاگ</h2>
+  <p class="muted small">
+    منبع ذخیره‌سازی این پروژه SQLite است؛ اگر مدت‌ها لاگ نگه داری، فایل دیتابیس بزرگ می‌شود.
+    با این دکمه فقط ردیف‌های قدیمی‌تر از تعداد روز انتخابی پاک می‌شوند.
+  </p>
+  <form method="post" action="{{ admin_path }}ai/purge" class="inline">
+    <input class="input input--sm" type="number" name="keep_days" value="60" min="1" max="3650" dir="ltr">
+    <button class="btn btn--ghost btn--sm" type="submit">پاک‌سازی</button>
+  </form>
+</section>
+{% endblock %}

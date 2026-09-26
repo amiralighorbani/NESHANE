@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}پیامک‌ها — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <a class="back-link" href="/register"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> بازگشت به ثبت‌نام</a>
+
+  <div class="flow__mark" style="--accent:#2f8fa8"><i class="fa-solid fa-comment-dots" aria-hidden="true"></i></div>
+  <h1 class="flow__title">پیامک‌های من</h1>
+  <p class="flow__lead">شبیه‌سازی صندوق پیامک؛ چون در این نسخه پیامک واقعی ارسال نمی‌شود، کد ثبت‌نام اینجاست. برای شماره‌ای که ثبت‌نامش کامل شده، هیچ کدی فرستاده نمی‌شود.</p>
+
+  {% if phone %}
+    <div class="inbox-number">
+      <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i> <span class="ltr">{{ phone | fa }}</span>
+    </div>
+  {% endif %}
+
+  <div class="inbox-list">
+    {% for message in messages %}
+      <article class="sms">
+        <div class="sms__head">
+          <span class="sms__avatar"><i class="{{ message.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ message.sender }}</strong>
+          <span class="sms__time">همین حالا</span>
+        </div>
+        <p class="sms__text">{{ message.text }}</p>
+      </article>
+    {% else %}
+      <div class="empty">
+        <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+        <p>پیامکی وجود ندارد. اول شماره‌ات را در صفحهٔ ثبت‌نام وارد کن.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if code %}
+    <a class="btn btn--primary btn--block" href="/verify">
+      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> رفتن به صفحهٔ تأیید کد
+    </a>
+  {% endif %}
+</section>
+{% endblock %}

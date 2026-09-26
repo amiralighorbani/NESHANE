@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}نشانه — فال، طالع و خودشناسی{% endblock %}
+
+{% block content %}
+<section class="lp-hero anim-in">
+  <div class="lp-orb lp-orb--a" aria-hidden="true"></div>
+  <div class="lp-orb lp-orb--b" aria-hidden="true"></div>
+
+  <span class="lp-eyebrow"><i class="fa-solid fa-star-of-life" aria-hidden="true"></i> فال حافظ، تاروت، طالع و تست شخصیت</span>
+  <h1 class="lp-title">
+    امروزت را<br>
+    <span class="lp-title__accent">پیش از شروع</span> ببین
+  </h1>
+  <p class="lp-lead">
+    یک سفر کوتاه: اطلاعات تولدت را می‌دهی، نیت می‌کنی و نشانهٔ امروزت را می‌گیری —
+    با تعبیر، انرژی روز و آمار کامل زندگی‌ات.
+  </p>
+
+  <div class="lp-actions">
+    <a class="btn btn--primary btn--block" href="{{ '/journey' if user else '/register' }}">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+      {{ 'شروع سفر فال' if user else 'شروع کن — ثبت‌نام با شماره' }}
+    </a>
+    <a class="btn btn--ghost btn--block" href="#sample">
+      <i class="fa-solid fa-book-open" aria-hidden="true"></i> یک نمونهٔ واقعی ببین
+    </a>
+  </div>
+
+</section>
+
+{# بنر تبلیغاتی: سرور تصمیم می‌گیرد کدام تبلیغ الان وقت نمایش دارد. #}
+{% if banner %}
+  {% if banner.link %}
+    <a class="ad-banner anim-in anim-delay-1" href="{{ banner.link }}" target="_blank" rel="noopener nofollow"
+       data-ad-banner="{{ banner.id }}">
+  {% else %}
+    <div class="ad-banner anim-in anim-delay-1" data-ad-banner="{{ banner.id }}">
+  {% endif %}
+      <span class="ad-banner__media">
+        {% if banner.kind == 'video' %}
+          <video src="{{ banner.media }}" muted playsinline autoplay loop></video>
+        {% else %}
+          <img src="{{ banner.media }}" alt="{{ banner.title }}" loading="lazy">
+        {% endif %}
+      </span>
+      <span class="ad-banner__body">
+        <span class="ad-banner__tag"><i class="fa-solid fa-rectangle-ad" aria-hidden="true"></i> پیشنهاد ویژه</span>
+        <span class="ad-banner__title">{{ banner.title }}</span>
+        {% if banner.body %}<span class="ad-banner__text">{{ banner.body }}</span>{% endif %}
+      </span>
+      {% if banner.link %}
+        <span class="ad-banner__cta">{{ banner.cta or 'بیشتر بدانید' }} <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></span>
+      {% endif %}
+  {% if banner.link %}</a>{% else %}</div>{% endif %}
+{% endif %}
+
+<section class="lp-quick anim-in anim-delay-1">
+  <a class="lp-tile" href="{{ '/journey' if user else '/register' }}">
+    <span class="lp-tile__icon" style="--tint:#7c5cd6"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
+    <strong>فال امروز</strong>
+    <small>غزل واقعی، با تعبیر و راهنما</small>
+  </a>
+  <a class="lp-tile" href="{{ '/journey' if user else '/register' }}">
+    <span class="lp-tile__icon" style="--tint:#c0577f"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span>
+    <strong>کارت تاروت</strong>
+    <small>۲۲ آرکانای بزرگ</small>
+  </a>    <a class="lp-tile" href="/life">
+      <span class="lp-tile__icon" style="--tint:#2f8fa8"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span>
+      <strong>زندگی در عدد</strong>
+      <small>ضربان قلب، وعدهٔ غذا، هفته‌ها</small>
+    </a>
+  <a class="lp-tile" href="/tests">
+    <span class="lp-tile__icon" style="--tint:#5c8f4a"><i class="fa-solid fa-brain" aria-hidden="true"></i></span>
+    <strong>تست شخصیت</strong>
+    <small>MBTI، انیاگرام و…</small>
+  </a>
+</section>
+
+{% if sample_fortune %}
+  <section class="lp-section anim-in anim-delay-2" id="sample">
+    <div class="lp-section__head">
+      <h2><i class="fa-solid fa-eye" aria-hidden="true"></i> یک فال واقعی از نشانه</h2>
+      <span class="lp-badge">{{ sample_fortune.source_label }}</span>
+    </div>
+    <article class="lp-fortune">
+      <div class="lp-fortune__head">
+        <span class="lp-badge lp-badge--accent">{{ sample_fortune.title }}</span>
+        {% if sample_fortune.theme_label %}<span class="lp-badge">{{ sample_fortune.theme_label }}</span>{% endif %}
+      </div>
+      <ul class="lp-verses">
+        {% for line in sample_fortune.verses %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      <p class="lp-fortune__body">{{ sample_fortune.interpretation }}</p>
+      <p class="lp-fortune__guide"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ sample_fortune.guidance }}</p>
+    </article>
+    <p class="lp-note">
+      هر فال از غزل‌های واقعی دیوان حافظ و کارت‌های دست‌نویس نشانه انتخاب می‌شود؛
+      همان اطلاعات و همان روز، همان فال را می‌دهد.
+    </p>
+  </section>
+{% endif %}
+
+{% if life_sample %}
+  <section class="lp-section anim-in anim-delay-3">
+    <div class="lp-section__head">
+      <h2><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> زندگی در عدد</h2>
+      <span class="lp-badge">نمونه</span>
+    </div>
+    <article class="lp-life-card">
+      <div class="lp-life-card__head">
+        <div>
+          <p class="lp-life-card__eyebrow">عمر، بدن و جهان تو در یک نگاه</p>
+          <h3 class="lp-life-card__age">{{ life_sample.age_label }}</h3>
+        </div>
+        <div class="lp-life-card__ring" style="--value: {{ life_sample.life_progress }}">
+          <span>{{ life_sample.life_progress | fa }}<small>٪</small></span>
+        </div>
+      </div>
+      <ul class="lp-life-list">
+        {% for card in life_sample.time[:1] + life_sample.body[:3] + life_sample.world[:2] %}
+          <li>
+            <span class="lp-life-list__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+            <span class="lp-life-list__body">
+              <strong>{{ card.value }}</strong>
+              <small>{{ card.label }}</small>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+      <a class="btn btn--primary btn--block" href="{{ '/life' if user else '/register' }}">
+        <i class="fa-solid fa-chart-simple" aria-hidden="true"></i> زندگی خودم را ببین
+      </a>
+    </article>
+  </section>
+{% endif %}
+
+<section class="lp-section anim-in anim-delay-3">
+  <div class="lp-section__head">
+    <h2>روش‌های فال</h2>
+    <a class="section__link" href="/methods">همه <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+  </div>
+  <div class="card-list">
+    {% for key in METHOD_ORDER %}
+      {% set method = METHODS[key] %}
+      <article class="method-card" style="--accent: {{ method.accent }}">
+        <span class="method-card__icon"><i class="{{ method.icon }}" aria-hidden="true"></i></span>
+        <div class="method-card__body">
+          <h3>{{ method.label }}</h3>
+          <p>{{ method.tagline }}</p>
+        </div>
+        <span class="method-card__chevron"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></span>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lp-section anim-in anim-delay-4">
+  <div class="lp-section__head">
+    <h2>تست‌های شخصیت</h2>
+    <a class="section__link" href="/tests">همه <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+  </div>
+  <div class="lp-tests">
+    {% for key in TEST_ORDER %}
+      {% set test = TESTS[key] %}
+      <a class="lp-test" href="/tests/{{ test.key }}" style="--accent: {{ test.accent }}">
+        <span class="lp-test__icon"><i class="{{ test.icon }}" aria-hidden="true"></i></span>
+        <span class="lp-test__body">
+          <strong>{{ test.short }}</strong>
+          <small>{{ test.tagline }}</small>
+        </span>
+        <span class="lp-test__meta">{{ test.count | fa }} سوال</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lp-section anim-in anim-delay-4">
+  <div class="lp-section__head"><h2>طالع‌ها</h2></div>
+  <div class="lp-signs">
+    {% for sign in sample_signs %}
+      <span class="lp-sign" style="--accent: {{ METHODS.zodiac.accent }}">
+        <b>{{ sign.symbol }}</b> {{ sign.name }}
+      </span>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lp-section anim-in anim-delay-5">
+  <div class="lp-section__head"><h2>چه چیزی داخل نشانه هست</h2></div>
+  <div class="feature-list">
+    {% for item in HIGHLIGHTS %}
+      <div class="feature">
+        <span class="feature__icon"><i class="{{ item.icon }}" aria-hidden="true"></i></span>
+        <div>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lp-section anim-in anim-delay-5">
+  <div class="lp-section__head"><h2>کاربران چه می‌گویند</h2></div>
+  <div class="testimonial-row">
+    {% for item in TESTIMONIALS %}
+      <article class="testimonial">
+        <div class="testimonial__head">
+          <span class="avatar"><i class="{{ item.avatar_icon }}" aria-hidden="true"></i></span>
+          <div>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.city }}</span>
+          </div>
+        </div>
+        <p>{{ item.text }}</p>
+        <span class="testimonial__tag"><i class="{{ item.method_icon }}" aria-hidden="true"></i> {{ item.method }}</span>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lp-section anim-in anim-delay-6">
+  <div class="lp-section__head"><h2>پرسش‌های پرتکرار</h2></div>
+  <div class="faq-list">
+    {% for item in FAQ %}
+      <details class="faq">
+        <summary>{{ item.q }}<i class="fa-solid fa-plus" aria-hidden="true"></i></summary>
+        <p>{{ item.a }}</p>
+      </details>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cta-card anim-in anim-delay-6">
+  <h2>امشب نیتت را روشن کن</h2>
+  <p>سه صفحهٔ کوتاه تا نشانهٔ امروزت.</p>
+  <a class="btn btn--light btn--block" href="{{ '/journey' if user else '/register' }}">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> شروع
+  </a>
+</section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}دستورهای سیستم — پنل نشانه{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>دستورهای سیستم (System Prompts)</h1>
+    <p class="muted">
+      این صفحه فقط-خواندنی است: هیچ راهی برای ویرایش از اینجا وجود ندارد. هر متنی که
+      می‌بینی <strong>عیناً</strong> همان چیزی است که برنامه به مدل زبانی می‌فرستد؛
+      هیچ نسخهٔ دومی در کد وجود ندارد.
+    </p>
+  </div>
+  <div class="head__actions">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}ai">
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i> بازگشت به مانیتورینگ
+    </a>
+  </div>
+</div>
+
+{% for row in prompt_rows %}
+<section class="panel prompt">
+  <header class="prompt__head">
+    <span class="prompt__icon"><i class="{{ row.icon }}" aria-hidden="true"></i></span>
+    <div>
+      <h2>{{ row.label }}</h2>
+      <p class="muted small">{{ row.summary }}</p>
+    </div>
+  </header>
+
+  <dl class="kv kv--wide">
+    <div><dt>کلید فنی</dt><dd class="ltr">{{ row.key }}</dd></div>
+    <div><dt>کجا استفاده می‌شود</dt><dd>{{ row.used_in }}</dd></div>
+    <div><dt>ساختار خروجی</dt><dd class="ltr">{{ row.output }}</dd></div>
+    <div><dt>دما</dt><dd class="ltr">{{ row.temperature }}</dd></div>
+    <div><dt>سقف توکن</dt><dd class="ltr">{{ row.max_tokens }}</dd></div>
+    <div><dt>تعداد تماس</dt><dd>{{ row.stats.total | fa }}</dd></div>
+    <div><dt>نرخ موفقیت</dt><dd>{{ row.stats.success_rate | fa }}٪</dd></div>
+    <div><dt>میانگین تأخیر</dt><dd>{{ row.stats.avg_latency | fa }}ms</dd></div>
+    <div><dt>توکن مصرفی</dt><dd>{{ row.stats.tokens | fa }}</dd></div>
+    <div><dt>آخرین اجرا</dt><dd>{{ stamp(row.stats.last_at) if row.stats.last_at else '—' }}</dd></div>
+  </dl>
+
+  <h3 class="prompt__section">
+    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+    دستور سیستم
+    <small>{{ row.system_chars | fa }} نویسه • {{ row.system_lines | fa }} خط</small>
+  </h3>
+  <pre class="code code--big">{{ row.system }}</pre>
+
+  <h3 class="prompt__section">
+    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+    قالب پیام کاربر
+    <small>جای‌نگهدارها با دادهٔ واقعی همین لحظه پر می‌شوند</small>
+  </h3>
+  <pre class="code">{{ row.user_template }}</pre>
+</section>
+{% endfor %}
+
+<p class="muted small">
+  برای دیدن اینکه هر پرامپت در عمل با چه داده‌ای پر شده، به صفحهٔ مانیتورینگ برو و روی
+  «جزئیات» هر تماس بزن؛ پرامپت فرستاده‌شده و پاسخ خام مدل آنجا ذخیره شده است.
+</p>
+{% endblock %}
