@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- همان رنگ‌های مانیفست PWA تا اسپلش و نوارهای سیستم با اپ یکی باشند. -->
+    <color name="colorPrimary">#6b4fbb</color>
+    <color name="colorPrimaryDark">#4a3585</color>
+    <color name="backgroundColor">#f6f5f2</color>
+</resources>

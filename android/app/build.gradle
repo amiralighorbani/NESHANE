@@ -1,0 +1,90 @@
+// ماژول اپ «نشانه» — یک Trusted Web Activity که PWA را تمام‌صفحه باز می‌کند.
+
+plugins {
+    id "com.android.application"
+}
+
+// --- آدرس اپ ---------------------------------------------------------------- #
+// تنها منبع حقیقت، فایل host.txt است (یک خط، آدرس https عمومی اپ). چون آدرس
+// عمومی است، در مخزن نگه داشتنش مشکلی ندارد و باعث می‌شود CI بدون هیچ رمزی بسازد.
+def hostFile = rootProject.file("host.txt")
+def appHost = hostFile.exists() ? hostFile.text.trim() : ""
+if (!appHost) {
+    throw new GradleException(
+        "android/host.txt خالی است. یک خط با آدرس https اپ بنویس، مثل:\n" +
+        "  https://neshane.example.com"
+    )
+}
+if (!appHost.startsWith("https://")) {
+    throw new GradleException(
+        "آدرس اپ باید با https:// شروع شود (اندروید و PWA فقط روی https کار می‌کنند): " + appHost
+    )
+}
+
+// پیکربندی امضا فقط اگر keystore.properties وجود داشته باشد (در مخزن نیست).
+def keystorePropsFile = rootProject.file("keystore.properties")
+def hasKeystore = keystorePropsFile.exists()
+
+// نسخه از خودِ اپ خوانده می‌شود تا APK و سایت هیچ‌وقت از هم جدا نشوند.
+def versionNameFromApp = "1.0.0"
+def appInit = rootProject.file("../app/__init__.py")
+if (appInit.exists()) {
+    def match = (appInit.text =~ /__version__\s*=\s*"([^"]+)"/)
+    if (match.find()) {
+        versionNameFromApp = match.group(1)
+    }
+}
+def versionParts = versionNameFromApp.tokenize(".").collect { it.isInteger() ? it.toInteger() : 0 }
+while (versionParts.size() < 3) { versionParts.add(0) }
+def versionCodeFromApp = versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]
+
+android {
+    namespace "app.neshane"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "app.neshane"
+        minSdk 21
+        targetSdk 34
+        versionCode versionCodeFromApp
+        versionName versionNameFromApp
+
+        // آدرس شروع داخل مانیفست از همین‌جا تزریق می‌شود.
+        manifestPlaceholders = [
+            launchUrl: appHost + "/?src=apk",
+        ]
+    }
+
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                def props = new Properties()
+                keystorePropsFile.withInputStream { props.load(it) }
+                storeFile rootProject.file(props.getProperty("storeFile"))
+                storePassword props.getProperty("password")
+                keyAlias props.getProperty("alias")
+                keyPassword props.getProperty("password")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            // اگر کلید امضا نبود، با امضای دیباگ ساخته می‌شود تا CI هرگز APK بی‌امضا
+            // تحویل ندهد (اندروید APK بی‌امضا را نصب نمی‌کند).
+            signingConfig hasKeystore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // کتابخانهٔ رسمی گوگل برای TWA؛ همان چیزی که Bubblewrap هم استفاده می‌کند.
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+}
