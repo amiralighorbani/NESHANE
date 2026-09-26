@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>تصاویر فروشگاهی نشانه — بازبینی</title>
+<style>
+  body { margin: 0; padding: 28px; background: #14131b; color: #f2f1f8;
+         font-family: "Pinar FD", system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.lead { color: #a9a4c0; font-size: 14px; margin: 0 0 22px; line-height: 2; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+  figure { margin: 0; background: #1e1c2a; border-radius: 14px; padding: 10px; }
+  figure img { width: 100%; border-radius: 9px; display: block; }
+  figcaption { font-size: 12px; color: #b9b4cf; margin-top: 8px; text-align: center; }
+  h2 { font-size: 16px; margin: 34px 0 12px; color: #cfc9e4; }
+</style>
+</head>
+<body>
+  <h1>تصاویر فروشگاهی «نشانه»</h1>
+  <p class="lead">ده تصویر ۱۰۸۰×۱۹۲۰ برای مارکت‌پلیس، به‌همراه اسکرین‌شات‌های خام اپ.</p>
+
+  <h2>تصاویر نهایی (آمادهٔ بارگذاری)</h2>
+  <div class="grid" id="frames"></div>
+
+  <h2>اسکرین‌شات خام اپ (۳۹۰×۸۴۴)</h2>
+  <div class="grid" id="shots"></div>
+
+<script>
+  var frames = ["01-start","02-hafez","03-tarot","04-dice","05-methods",
+                "06-intent","07-life","08-tests","09-question","10-result"];
+  var shots = ["start","hafez","tarot","dice","methods","intent","life","tests","question","result"];
+  function fill(id, list, folder, ext) {
+    document.getElementById(id).innerHTML = list.map(function (name) {
+      return '<figure><img src="' + folder + '/' + name + ext + '" alt="' + name + '" />' +
+             '<figcaption>' + name + '</figcaption></figure>';
+    }).join("");
+  }
+  fill("frames", frames, "screenshots", ".png");
+  fill("shots", shots, "shots", ".png");
+</script>
+</body>
+</html>

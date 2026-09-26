@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>نشانه — تصاویر فروشگاه</title>
+<style>
+@font-face { font-family: "Pinar FD"; src: url("fonts/Pinar-FD-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Pinar FD"; src: url("fonts/Pinar-FD-SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Pinar FD"; src: url("fonts/Pinar-FD-Bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "YekanBakh FaNum"; src: url("fonts/YekanBakhFaNum-Bold.woff2") format("woff2"); font-weight: 700; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; }
+body {
+  font-family: "Pinar FD", system-ui, sans-serif;
+  direction: rtl;
+  color: #131419;
+  background: #f2f1f8;
+}
+.canvas {
+  position: relative; width: 1080px; height: 1920px; overflow: hidden;
+  background:
+    radial-gradient(760px 560px at 92% -6%, rgba(107, 79, 187, 0.20), transparent 70%),
+    radial-gradient(720px 520px at 4% 104%, rgba(47, 143, 168, 0.18), transparent 72%),
+    linear-gradient(168deg, #f7f5ff 0%, #efeee9 52%, #e8f4f2 100%);
+}
+.brand { position: absolute; top: 74px; inset-inline-start: 88px; display: flex; align-items: center; gap: 16px; }
+.brand img { width: 74px; height: 74px; border-radius: 22px; box-shadow: 0 14px 34px rgba(107, 79, 187, 0.28); }
+.brand b { font-size: 40px; font-weight: 700; letter-spacing: -0.5px; }
+.brand span { font-size: 24px; color: #5b6070; }
+
+.head { position: absolute; top: 190px; inset-inline: 84px; }
+.head h1 {
+  font-size: 60px; font-weight: 700; line-height: 1.42; letter-spacing: -1.2px;
+}
+.head h1 em { font-style: normal; color: #6b4fbb; }
+.head p { margin-top: 20px; font-size: 29px; line-height: 1.8; color: #5b6070; }
+
+/* ماکت گوشی: کل ارتفاع صفحهٔ اپ جا می‌شود (نوار پایین اپ بریده نمی‌شود). */
+.phone {
+  position: absolute; top: 556px; inset-inline: 0; margin-inline: auto;
+  width: 588px; height: 1244px;
+  border-radius: 66px; padding: 14px;
+  background: linear-gradient(160deg, #2a2735, #14131b 45%, #2f2b3d);
+  box-shadow: 0 56px 110px rgba(24, 20, 46, 0.32), inset 0 0 0 2px rgba(255, 255, 255, 0.10);
+}
+.screen {
+  position: relative; width: 100%; height: 100%; border-radius: 53px; overflow: hidden;
+  background: #eeedea;
+}
+/* عرض ۵۶۰ = ۳۹۰ (عرض واقعی اپ) × ۱٫۴۳۶ → همان نسبت تصویر، بدون کشیدگی یا برش. */
+.screen img { display: block; width: 560px; height: auto; }
+.island {
+  position: absolute; top: 22px; inset-inline: 0; margin-inline: auto;
+  width: 146px; height: 30px; border-radius: 999px; background: #0e0d13; z-index: 3;
+}
+.chips {
+  position: absolute; bottom: 46px; inset-inline: 84px;
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+}
+.chip {
+  font-size: 25px; font-weight: 600; color: #4b3f7d;
+  background: rgba(107, 79, 187, 0.12); border-radius: 999px; padding: 14px 26px;
+}
+</style>
+</head>
+<body>
+<div class="canvas" id="canvas"></div>
+<script>
+var FRAMES = [{"title": "فالت را از دلِ نیتِ امروزت بگیر", "sub": "اول نیتت را می‌نویسی، بعد نشانه راهش را نشان می‌دهد. هفت روش، یک نیت.", "screen": "start", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["فال با نیت", "هفت روش", "فارسی و راست‌به‌چپ"]}, {"title": "فال حافظ، با تفسیری که به نیت تو می‌خورد", "sub": "غزل را با کلیدواژه‌های نیتت می‌خوانیم و معنی‌اش را برای سؤال خودت می‌گوییم.", "screen": "hafez", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["کلیدواژه‌های نیت", "معنی برای امروز", "بدون تکرار"]}, {"title": "تاروت سه‌کارتی؛ کارت‌ها واقعاً رو می‌شوند", "sub": "هر کارت با نام، جایگاه و راست یا برگشته بودنش نمایش داده می‌شود.", "screen": "tarot", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["سه کارت", "راست / برگشته", "جایگاه هر کارت"]}, {"title": "تاس‌های نمادین، با همان چشم‌ها", "sub": "سه تاس واقعی می‌افتند و هر عدد معنی، جهت و تفسیر خودش را دارد.", "screen": "dice", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["سه تاس", "چشم‌های واقعی", "معنی هر عدد"]}, {"title": "هفت روش فال، هر کدام با ابزارِ خودش", "sub": "حافظ، تاروت، تاس، رون، عدد، طالع و چینی — از هم قابل تشخیص و متفاوت.", "screen": "methods", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["ابزار جدا برای هر فال", "نماد واقعی", "ظاهر متفاوت"]}, {"title": "یک جمله از نیتت، تفاوتِ فال را می‌سازد", "sub": "تفسیر روی همان چیزی سوار می‌شود که خودت نوشته‌ای، نه روی یک متن آماده.", "screen": "intent", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["نیت کوتاه", "تفسیر شخصی", "بدون متن آماده"]}, {"title": "زندگی در عدد: نگاهی آماری به خودت", "sub": "از ریتم قلب و عددِ غذا تا الگوهای رفتاری — همه از تاریخ تولدِ خودت حساب می‌شود.", "screen": "life", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["از تاریخ تولد", "کارت‌های آماری", "زبان ساده"]}, {"title": "ده تستِ شخصیت، در یک جا", "sub": "MBTI، پنج عامل بزرگ، کهن‌الگوهای یونگ، انیاگرام، DISC، چاکرا و هوش‌های چندگانه.", "screen": "tests", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["ده آزمون", "نمرهٔ هر مؤلفه", "نتیجهٔ قابل‌فهم"]}, {"title": "جواب‌هایت، نتیجه‌ات را می‌سازند", "sub": "هر گزینه وزن واقعی خودش را دارد و نتیجه با فرمول همان آزمون محاسبه می‌شود.", "screen": "question", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["گزینه‌های خوانا", "وزن واقعی هر پاسخ", "روی موبایل روان"]}, {"title": "نتیجهٔ دقیق، با نمرهٔ هر مؤلفه", "sub": "نمودار، تفسیر و قدمِ بعدی — همه بر اساس پاسخ‌های خودت.", "screen": "result", "kicker": "فال، تست شخصیت و شناخت خودت", "chips": ["نمودار محورها", "تفسیر پاسخ‌ها", "قدم بعدی"]}];
+var params = new URLSearchParams(location.search);
+var only = params.get("i");
+var index = only ? Math.max(1, Math.min(FRAMES.length, parseInt(only, 10))) : null;
+var items = index ? [FRAMES[index - 1]] : FRAMES;
+var host = document.getElementById("canvas");
+var html = items.map(function (f) {
+  return '' +
+  '<section class="brand"><img src="/static/icons/icon-192.png" alt="نشانه" /><b>نشانه</b><span>' + (f.kicker || "") + '</span></section>' +
+  '<div class="head"><h1>' + f.title + '</h1><p>' + f.sub + '</p></div>' +
+  '<div class="phone"><div class="screen"><span class="island"></span><img src="shots/' + f.screen + '.png" alt="' + f.title.replace(/<[^>]+>/g, "") + '" /></div></div>' +
+  '<div class="chips">' + (f.chips || []).map(function (c) { return '<span class="chip">' + c + '</span>'; }).join("") + '</div>';
+}).join('');
+host.innerHTML = html;
+</script>
+</body>
+</html>
