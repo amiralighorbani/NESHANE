@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}{{ test.label }} — نتیجه{% endblock %}
+
+{% block content %}
+<section class="result">
+  <header class="type-hero anim-in" style="--accent: {{ result.accent }}">
+    <span class="method-badge" style="--accent: {{ result.accent }}">
+      <i class="{{ result.test_icon }}" aria-hidden="true"></i> {{ result.test_label }}
+    </span>
+    <div class="type-hero__mark">
+      {% if result.icon %}<i class="{{ result.icon }}" aria-hidden="true"></i>{% else %}<span class="glyph glyph--xl">{{ result.glyph }}</span>{% endif %}
+    </div>
+    <h1 class="type-hero__title">{{ result.title }}</h1>
+    {% if result.code %}<span class="type-hero__code ltr">{{ result.code }}</span>{% endif %}
+    <p class="type-hero__tagline">{{ result.tagline }}</p>
+    <p class="type-hero__date"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> {{ result.created_label }}</p>
+  </header>
+
+  <section class="panel anim-in anim-delay-1">
+    <p class="panel__text">{{ result.body }}</p>
+  </section>
+
+  {% if result.ai_note %}
+    <section class="panel panel--personal anim-in anim-delay-1" style="--accent: {{ result.accent }}">
+      <div class="panel__head">
+        <h2><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> تفسیرِ مخصوصِ پاسخ‌های تو</h2>
+        <span class="panel__note"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> {{ result.answered | fa }} پاسخ</span>
+      </div>
+      <p class="panel__text">{{ result.ai_note }}</p>
+      {% if result.ai_next_step %}
+        <p class="personal-invite"><i class="fa-solid fa-forward" aria-hidden="true"></i> قدم بعدی: {{ result.ai_next_step }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if result.axes %}
+    <section class="panel anim-in anim-delay-1">
+      <div class="panel__head"><h2><i class="fa-solid fa-sliders" aria-hidden="true"></i> محورهای شخصیتی</h2></div>
+      <div class="axis-list">
+        {% for axis in result.axes %}
+          <div class="axis">
+            <span class="axis__title">{{ axis.title }}</span>
+            <div class="axis__bar">
+              <span class="axis__side axis__side--start {% if axis.winner == axis.left %}is-win{% endif %}" style="--w: {{ axis.left_pct }}%">
+                {{ axis.left_label }}
+              </span>
+              <span class="axis__side axis__side--end {% if axis.winner == axis.right %}is-win{% endif %}" style="--w: {{ axis.right_pct }}%">
+                {{ axis.right_label }}
+              </span>
+            </div>
+            <span class="axis__pct ltr">{{ axis.left_pct }}% / {{ axis.right_pct }}%</span>
+            <span class="axis__strength">{{ axis.strength }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if result.ranked %}
+    <section class="panel anim-in anim-delay-2">
+      <div class="panel__head"><h2><i class="fa-solid fa-ranking-star" aria-hidden="true"></i> الگوهای غالب تو</h2></div>
+      <ul class="rank-list">
+        {% for item in result.ranked %}
+          <li class="rank {% if item.top == '1' %}is-top{% endif %}">
+            <span class="rank__icon">
+              {% if item.icon %}<i class="{{ item.icon }}" aria-hidden="true"></i>{% else %}<span class="glyph">{{ item.glyph }}</span>{% endif %}
+            </span>
+            <span class="rank__title">{{ item.title }}{% if item.level %} <small class="rank__level rank__level--{{ item.tone }}">{{ item.level }}</small>{% endif %}</span>
+            <span class="rank__bar"><i style="width: {{ item.pct }}%"></i></span>
+            <span class="rank__pct">{{ item.pct | fa }}٪</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if result.strengths %}
+    <section class="panel anim-in anim-delay-2">
+      <div class="panel__head"><h2><i class="fa-solid fa-star" aria-hidden="true"></i> توانمندی‌ها</h2></div>
+      <div class="tag-row">
+        {% for item in result.strengths %}<span class="tag">{{ item }}</span>{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="panel anim-in anim-delay-3">
+    <div class="panel__head"><h2><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> توان و سایه</h2></div>
+    <div class="split">
+      <div class="split__item split__item--good">
+        <span><i class="fa-solid fa-plus" aria-hidden="true"></i> توانمندی</span>
+        <p>{{ result.gift or '—' }}</p>
+      </div>
+      <div class="split__item split__item--bad">
+        <span><i class="fa-solid fa-minus" aria-hidden="true"></i> نقطهٔ ضعف</span>
+        <p>{{ result.shadow or '—' }}</p>
+      </div>
+    </div>
+  </section>
+
+  {% if result.love or result.partner %}
+    <section class="panel anim-in anim-delay-3">
+      <div class="panel__head"><h2><i class="fa-solid fa-heart" aria-hidden="true"></i> در رابطه</h2></div>
+      {% if result.love %}<p class="panel__text">{{ result.love }}</p>{% endif %}
+      {% if result.partner %}<p class="guidance"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ result.partner }}</p>{% endif %}
+    </section>
+  {% endif %}
+
+  {% if result.careers %}
+    <section class="panel anim-in anim-delay-4">
+      <div class="panel__head"><h2><i class="fa-solid fa-briefcase" aria-hidden="true"></i> مسیرهای شغلی هم‌خوان</h2></div>
+      <div class="tag-row">
+        {% for item in result.careers %}<span class="tag tag--accent">{{ item }}</span>{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if result.advice %}
+    <section class="affirmation anim-in anim-delay-4">
+      <i class="fa-solid fa-compass" aria-hidden="true"></i>
+      <p>{{ result.advice }}</p>
+    </section>
+  {% endif %}
+
+  <div class="result-actions">
+    <form method="post" action="/tests/{{ test.key }}/start">
+      <button class="btn btn--primary btn--block" type="submit">
+        <i class="fa-solid fa-rotate" aria-hidden="true"></i> تکرار تست
+      </button>
+    </form>
+    <div class="result-actions__row">
+      <a class="btn btn--ghost" href="/tests"><i class="fa-solid fa-brain" aria-hidden="true"></i> تست‌های دیگر</a>
+      <a class="btn btn--ghost" href="/profile"><i class="fa-solid fa-user" aria-hidden="true"></i> پروفایل من</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "admin/base.html" %}
+{% block title %}پروندهٔ کامل {{ full_name }} — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="dossier">
+  <div class="topbar no-print">
+    <div>
+      <h1>پروندهٔ کامل کاربر</h1>
+      <p>هر چیزی که نشانه از {{ full_name }} گرفته است — آمادهٔ چاپ یا فرستادن برای خودش</p>
+    </div>
+    <div class="topbar__meta">
+      <button class="btn btn--sm" type="button" onclick="window.print()"><i class="fa-solid fa-print" aria-hidden="true"></i> چاپ / PDF</button>
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users/{{ user_id }}">صفحهٔ مدیریت کاربر</a>
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users/{{ user_id }}/dossier.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> CSV</a>
+    </div>
+  </div>
+
+  <header class="dossier__head">
+    <h1>{{ full_name }}</h1>
+    <p>{{ today }} — گزارش ساخته‌شده در پنل نشانه</p>
+    <div class="dossier__chips">
+      <span><i class="fa-solid fa-mobile-screen" aria-hidden="true"></i> {{ user.phone | fa }}</span>
+      <span><i class="fa-solid fa-cake-candles" aria-hidden="true"></i> {{ birth_label }}</span>
+      {% if user.birth_time %}<span><i class="fa-solid fa-clock" aria-hidden="true"></i> {{ user.birth_time | fa }}</span>{% endif %}
+      {% if user.city %}<span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ user.city }}</span>{% endif %}
+      {% if life %}<span><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> {{ life.age_label }}</span>{% endif %}
+    </div>
+  </header>
+
+  <div class="grid grid--4">
+    <div class="card stat">
+      <span class="stat__value">{{ readings | length | fa }}</span>
+      <span class="stat__label">فال ثبت‌شده</span>
+      <span class="stat__hint">همهٔ خوانش‌های این کاربر</span>
+    </div>
+    <div class="card stat">
+      <span class="stat__value">{{ attempts | length | fa }}</span>
+      <span class="stat__label">آزمون تمام‌شده</span>
+      <span class="stat__hint">با جواب تک‌تک سوال‌ها</span>
+    </div>
+    <div class="card stat">
+      <span class="stat__value">{{ (life.total_days if life else 0) | fa }}</span>
+      <span class="stat__label">روز زندگی</span>
+      <span class="stat__hint">از تاریخ تولد تا امروز</span>
+    </div>
+    <div class="card stat">
+      <span class="stat__value" style="font-size:17px">{{ created_label }}</span>
+      <span class="stat__label">ثبت‌نام در نشانه</span>
+      <span class="stat__hint">آخرین ورود: {{ last_login_label }}</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card__head"><h2><i class="fa-solid fa-at" aria-hidden="true"></i> داده‌های هویتی و نیت</h2></div>
+    <dl class="profile-grid">
+      <div class="item"><dt>نام</dt><dd>{{ user.name or '—' }}</dd></div>
+      <div class="item"><dt>نام خانوادگی</dt><dd>{{ user.family or '—' }}</dd></div>
+      <div class="item"><dt>جنسیت</dt><dd>{% if user.gender == 'f' %}خانم{% elif user.gender == 'm' %}آقا{% else %}نگفته{% endif %}</dd></div>
+      <div class="item"><dt>تاریخ تولد (شمسی)</dt><dd>{{ birth_label }}</dd></div>
+      {% if life %}
+        <div class="item"><dt>تاریخ تولد (میلادی)</dt><dd class="mono">{{ life.birth_gregorian }}</dd></div>
+        <div class="item"><dt>روز هفته</dt><dd>{{ life.weekday }}</dd></div>
+      {% endif %}
+      {% if draft.kind %}
+        <div class="item"><dt>آخرین روش</dt><dd>{{ draft_kind_label }}</dd></div>
+        <div class="item"><dt>آخرین موضوع</dt><dd>{{ draft_topic_label }}</dd></div>
+      {% endif %}
+      <div class="item item--wide"><dt>متن نیت ثبت‌شده</dt><dd>{{ draft.intent or 'ثبت نشده' }}</dd></div>
+    </dl>
+  </div>
+
+  {% if life %}
+    <div class="card" style="margin-top:14px">
+      <div class="card__head">
+        <h2><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> زندگی در عدد</h2>
+        <span class="muted">{{ life.headline }}</span>
+      </div>
+      <div class="life-grid">
+        {% for card in life.identity %}
+          <div class="life-card">
+            <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+            <div class="life-card__value">{{ card.value }}</div>
+            <div class="life-card__label">{{ card.label }}</div>
+            <div class="life-card__hint">{{ card.hint }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% for group in life.groups %}
+        <div class="card__head" style="margin-top:16px"><h2><i class="{{ group.icon }}" aria-hidden="true"></i> {{ group.title }}</h2></div>
+        <div class="life-grid">
+          {% for card in group.cards %}
+            <div class="life-card">
+              <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+              <div class="life-card__value">{{ card.value }}</div>
+              <div class="life-card__label">{{ card.label }}</div>
+              <div class="life-card__hint">{{ card.hint }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card" style="margin-top:14px">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-dice-d20" aria-hidden="true"></i> آزمون‌های شخصیت و جواب سوال‌ها ({{ attempts | length | fa }})</h2>
+    </div>
+
+    {% for attempt in attempts %}
+      <div class="card card--soft" style="margin-bottom:12px">
+        <div class="card__head">
+          <h2>
+            <i class="{{ attempt.icon }}" aria-hidden="true"></i> {{ attempt.test_label }}
+            {% if attempt.result_label or attempt.result_key %}
+              <span class="badge">نتیجه: {{ attempt.result_label or attempt.result_key }}</span>
+            {% endif %}
+          </h2>
+          <span class="muted num">{{ attempt.answered | fa }} از {{ attempt.total | fa }} سوال — {{ attempt.finished_label }}</span>
+        </div>
+        {% if attempt.scores %}
+          <p class="note" style="margin-bottom:10px">
+            امتیازها:
+            {% for key, value in attempt.scores.items() %}<span class="badge badge--muted">{{ key | fa }}: {{ value | fa }}</span> {% endfor %}
+          </p>
+        {% endif %}
+        <div class="qa">
+          {% for row in attempt.rows %}
+            <div class="qa__item">
+              <div class="qa__q">{{ row.number | fa }}. {{ row.question }}</div>
+              {% if row.answer %}
+                <div class="qa__a"><i class="fa-solid fa-check" aria-hidden="true"></i> {{ row.answer }}</div>
+              {% else %}
+                <div class="qa__a qa__a--empty">بدون جواب</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <p class="muted">این کاربر هنوز آزمونی را تا آخر جواب نداده است.</p>
+    {% endfor %}
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال‌های گرفته‌شده ({{ readings | length | fa }})</h2>
+    </div>
+
+    {% for item in readings %}
+      {% set reading = item.reading %}
+      <div class="card card--soft" style="margin-bottom:12px">
+        <div class="card__head">
+          <h2>
+            <i class="{{ reading.method_icon or 'fa-solid fa-star' }}" aria-hidden="true"></i>
+            {{ reading.method_label }} — {{ reading.topic_label }}
+          </h2>
+          <span class="muted num">{{ item.created_label }} • انرژی {{ reading.overall | fa }}٪</span>
+        </div>
+
+        <p><b>{{ reading.headline }}</b></p>
+        <p class="muted">{{ reading.summary }}</p>
+
+        {% if reading.intent %}<p class="note" style="margin-top:8px">نیت: «{{ reading.intent }}»</p>{% endif %}
+
+        {% for block in reading.blocks %}
+          <div style="margin-top:12px">
+            <p class="muted"><b>{{ block.title }}</b>{% if block.lead %} — {{ block.lead }}{% endif %}</p>
+            {% if block.lines %}
+              <ul class="verse">{% for line in block.lines %}<li>{{ line }}</li>{% endfor %}</ul>
+            {% endif %}
+            {% if block.body %}<p>{{ block.body }}</p>{% endif %}
+            {% if block.note %}<p class="note"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ block.note }}</p>{% endif %}
+          </div>
+        {% endfor %}
+
+        <dl class="profile-grid" style="margin-top:12px">
+          {% for energy in reading.energies %}
+            <div class="item"><dt>{{ energy.label }}</dt><dd>{{ energy.value | fa }}% — {{ energy.band }}</dd></div>
+          {% endfor %}
+        </dl>
+
+        <div class="grid grid--2" style="margin-top:12px">
+          <div>
+            <p class="muted">کارهای امروز</p>
+            <ul class="verse">{% for line in reading.dos %}<li>{{ line }}</li>{% endfor %}</ul>
+          </div>
+          <div>
+            <p class="muted">امروز نه</p>
+            <ul class="verse">{% for line in reading.donts %}<li>{{ line }}</li>{% endfor %}</ul>
+          </div>
+        </div>
+
+        {% if reading.affirmation %}
+          <p class="note" style="margin-top:10px"><i class="fa-solid fa-quote-right" aria-hidden="true"></i> {{ reading.affirmation }}</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="muted">این کاربر هنوز فالی نگرفته است.</p>
+    {% endfor %}
+  </div>
+
+  <p class="muted" style="margin-top:16px;font-size:11.5px">
+    این گزارش از داده‌های ثبت‌شده در دیتابیس نشانه ساخته شده و بخش «زندگی در عدد» بر پایهٔ میانگین‌های عمومی است.
+  </p>
+</div>
+{% endblock %}

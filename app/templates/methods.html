@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}روش‌های فال — نشانه{% endblock %}
+
+{% block content %}
+<section class="page-head anim-in">
+  <h1>روش‌های فال</h1>
+  <p>هفت روش، از حافظ و تاروت تا طالع چینی و تاس؛ هر کدام با لحن و منطق خودش.</p>
+</section>
+
+<div class="card-list anim-in anim-delay-1">
+  {% for key in METHOD_ORDER %}
+    {% set method = METHODS[key] %}
+    <article class="method-card method-card--static" style="--accent: {{ method.accent }}">
+      <span class="method-card__icon"><i class="{{ method.icon }}" aria-hidden="true"></i></span>
+      <div class="method-card__body">
+        <strong>{{ method.label }}</strong>
+        <small>{{ method.about }}</small>
+        <span class="method-card__steps">
+          {% for step in method.steps %}{{ step }}{% if not loop.last %} • {% endif %}{% endfor %}
+        </span>
+        <span class="method-card__deck"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> {{ method.deck }}</span>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+<a class="btn btn--primary btn--block anim-in anim-delay-2" href="{{ '/journey' if user else '/login' }}">
+  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> انتخاب فال و شروع
+</a>
+{% endblock %}

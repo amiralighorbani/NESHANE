@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}فال‌های من — نشانه{% endblock %}
+
+{% block content %}
+<section class="page-head anim-in">
+  <h1>فال‌های من</h1>
+  <p>هر خوانش در دیتابیس ذخیره شده است؛ روی هر کدام بزنی دوباره باز می‌شود.</p>
+</section>
+
+{% if readings %}
+  <div class="history anim-in anim-delay-1">
+    {% for item in readings %}
+      {% set method = item.method %}
+      <a class="history__item" href="/r/{{ item.id }}" style="--accent: {{ method.accent or '#6b4fbb' }}">
+        <span class="history__icon"><i class="{{ method.icon or 'fa-solid fa-star' }}" aria-hidden="true"></i></span>
+        <span class="history__body">
+          <strong>{{ item.headline }}</strong>
+          <small>{{ method.label or item.kind }} • {{ TOPICS[item.topic].label if item.topic in TOPICS else 'بدون موضوع' }}</small>
+        </span>
+        <span class="history__score">{{ item.overall | fa }}٪</span>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty anim-in">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+    <p>هنوز فالی نگرفته‌ای. اولین نشانهٔ امروزت را بگیر.</p>
+    <a class="btn btn--primary" href="/journey"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> شروع فال</a>
+  </div>
+{% endif %}
+{% endblock %}

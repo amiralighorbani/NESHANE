@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ reading.method_label }} — {{ reading.name }}{% endblock %}
+{% block body_class %}{% if is_fresh %}is-fresh{% endif %}{% endblock %}
+
+{% block content %}
+<section class="result">
+  <header class="result-hero anim-in" style="--accent: {{ reading.method_accent }}">
+    <span class="method-badge" style="--accent: {{ reading.method_accent }}">
+      <i class="{{ reading.method_icon }}" aria-hidden="true"></i> {{ reading.method_label }}
+    </span>
+    <h1 class="result-hero__title">{{ reading.headline }}</h1>
+    <div class="result-hero__meta">
+      <span><i class="fa-solid fa-user" aria-hidden="true"></i> {{ reading.name }}</span>
+      <span><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> {{ reading.created_label }}</span>
+      {% if reading.city %}<span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ reading.city }}</span>{% endif %}
+    </div>
+    <div class="score-ring" style="--value: {{ reading.overall }}">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+        <circle class="ring-fill" cx="60" cy="60" r="52"></circle>
+      </svg>
+      <div class="score-ring__text">
+        <strong>{{ reading.overall | fa }}<small>٪</small></strong>
+        <span>{{ reading.overall_label }}</span>
+      </div>
+    </div>
+    {% if reading.intent %}
+      <p class="result-hero__intent"><i class="fa-solid fa-bullseye" aria-hidden="true"></i> نیت: {{ reading.intent }}</p>
+    {% endif %}
+  </header>
+
+  <section class="panel anim-in anim-delay-1">
+    <div class="panel__head">
+      <h2><i class="{{ reading.topic_icon }}" aria-hidden="true"></i> {{ reading.topic_label }}</h2>
+      <span class="panel__note"><i class="{{ reading.mood.icon }}" aria-hidden="true"></i> {{ reading.mood.label }}</span>
+    </div>
+    <p class="panel__text">{{ reading.summary }}</p>
+    <p class="panel__quiet"><i class="fa-solid fa-quote-right" aria-hidden="true"></i> {{ reading.mood.line }}</p>
+  </section>
+
+  {% if reading.ai_note %}
+    <section class="panel panel--personal anim-in anim-delay-1" style="--accent: {{ reading.method_accent }}">
+      <div class="panel__head">
+        <h2><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> خوانشِ مخصوصِ نیت تو</h2>
+        <span class="panel__note"><i class="fa-solid fa-bullseye" aria-hidden="true"></i> {{ reading.topic_label }}</span>
+      </div>
+      {% if reading.intent %}
+        <p class="personal-intent"><i class="fa-solid fa-quote-right" aria-hidden="true"></i> {{ reading.intent }}</p>
+      {% endif %}
+      <p class="panel__text">{{ reading.ai_note }}</p>
+      {% if reading.ai_guidance %}
+        <ul class="step-list">
+          {% for item in reading.ai_guidance %}
+            <li><span class="step-list__num">{{ loop.index | fa }}</span> {{ item }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if reading.ai_invitation %}
+        <p class="personal-invite"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{ reading.ai_invitation }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="panel panel--sign anim-in anim-delay-1">
+    <div class="sign-row">
+      <span class="sign-symbol">{{ reading.sign.symbol }}</span>
+      <div>
+        <h2>برج {{ reading.sign.name }}</h2>
+        <p>{{ reading.sign.range }} • {{ reading.sign.element }} • {{ reading.sign.planet }}</p>
+      </div>
+      <span class="sign-element"><i class="{{ reading.sign.element_glyph }}" aria-hidden="true"></i></span>
+    </div>
+    <p class="panel__text">{{ reading.element_note }}</p>
+  </section>
+
+  {% for block in reading.blocks %}
+    <section class="panel block anim-in" style="--accent: {{ block.accent or reading.method_accent }}">
+      <div class="block__head">
+        <span class="block__icon"><i class="{{ block.icon }}" aria-hidden="true"></i></span>
+        <div>
+          <h2>{{ block.title }}</h2>
+          {% if block.lead %}<p class="block__lead">{{ block.lead }}</p>{% endif %}
+        </div>
+      </div>
+
+      {% include "partials/symbols.html" %}
+
+      {% if block.lines %}
+        <ul class="verse-list">
+          {% for line in block.lines %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if block.body %}<p class="panel__text">{{ block.body }}</p>{% endif %}
+
+      {% if block.meta %}
+        <dl class="meta-grid">
+          {% for label, value in block.meta.items() %}
+            <div class="meta-grid__item">
+              <dt>{{ label }}</dt>
+              <dd>{{ value }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      {% endif %}
+
+      {% if block.note %}
+        <p class="guidance"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ block.note }}</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  <section class="panel anim-in">
+    <div class="panel__head"><h2><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> انرژی امروز</h2></div>
+    <ul class="energy-list">
+      {% for item in reading.energies %}
+        <li>
+          <span class="energy-list__label"><i class="{{ item.icon }}" aria-hidden="true"></i> {{ item.label }}</span>
+          <span class="energy-list__bar"><i style="width: {{ item.value }}%"></i></span>
+          <span class="energy-list__value">{{ item.value | fa }}٪</span>
+          <span class="energy-list__note">{{ item.note }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="panel__quiet">{{ reading.power_note }}</p>
+  </section>
+
+  <section class="panel anim-in">
+    <div class="panel__head">
+      <h2><i class="fa-solid fa-chart-simple" aria-hidden="true"></i> منحنی روز</h2>
+      <span class="panel__note">اوج: {{ reading.peak_label | fa }}</span>
+    </div>
+    <div class="curve">
+      {% for value in reading.curve %}
+        <span class="curve__bar" style="--h: {{ value }}%"><i></i><small>{{ reading.curve_labels[loop.index0] | fa }}</small></span>
+      {% endfor %}
+    </div>
+    <div class="phase-row">
+      {% for phase in reading.phases %}
+        <div class="phase">
+          <span class="phase__icon"><i class="{{ phase.icon }}" aria-hidden="true"></i></span>
+          <strong>{{ phase.label }}</strong>
+          <span class="phase__value">{{ phase.energy | fa }}٪</span>
+          <p>{{ phase.note }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel anim-in">
+    <div class="panel__head"><h2><i class="fa-solid fa-clover" aria-hidden="true"></i> شانس امروز</h2></div>
+    <div class="lucky-grid">
+      {% for item in reading.lucky %}
+        <div class="lucky" {% if item.label == 'رنگ' %}style="--swatch: {{ reading.lucky_color_hex }}"{% endif %}>
+          <span class="lucky__icon"><i class="{{ item.icon }}" aria-hidden="true"></i></span>
+          <span class="lucky__label">{{ item.label }}</span>
+          <strong class="lucky__value">{{ item.value }}</strong>
+          <small>{{ item.hint }}</small>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel anim-in">
+    <div class="panel__head"><h2><i class="fa-solid fa-list-check" aria-hidden="true"></i> امروز انجام بده</h2></div>
+    <ul class="check-list check-list--do">
+      {% for item in reading.dos %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+    <div class="panel__head"><h2><i class="fa-solid fa-ban" aria-hidden="true"></i> امروز انجام نده</h2></div>
+    <ul class="check-list check-list--dont">
+      {% for item in reading.donts %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel anim-in">
+    <div class="panel__head"><h2><i class="fa-solid fa-heart" aria-hidden="true"></i> هم‌نشینی امروز</h2></div>
+    <div class="compat">
+      <span class="compat__symbol">{{ reading.compat.symbol }}</span>
+      <div class="compat__body">
+        <strong>برج {{ reading.compat.sign_name }}</strong>
+        <span class="compat__tag">{{ reading.compat.affinity }} • {{ reading.compat.score | fa }}٪</span>
+        <p>{{ reading.compat.line }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="affirmation anim-in">
+    <i class="fa-solid fa-quote-right" aria-hidden="true"></i>
+    <p>{{ reading.affirmation }}</p>
+  </section>
+
+  <div class="result-actions">
+    <form method="post" action="/r/{{ reading.token }}/again">
+      <button class="btn btn--primary btn--block" type="submit">
+        <i class="fa-solid fa-rotate" aria-hidden="true"></i> فال تازه
+      </button>
+    </form>
+    <button class="btn btn--ghost btn--block" type="button" data-copy="{{ reading.summary_text }}">
+      <i class="fa-solid fa-copy" aria-hidden="true"></i> کپی متن فال
+    </button>
+    <div class="result-actions__row">
+      <a class="btn btn--ghost" href="/journey"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال دیگر</a>
+      <a class="btn btn--ghost" href="/readings"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> فالم‌ها</a>
+    </div>
+  </div>
+
+  <p class="fine-print"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> این خوانش برای سرگرمی و خودشناسی است، نه پیش‌بینی قطعی.</p>
+</section>
+{% endblock %}

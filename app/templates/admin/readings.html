@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+{% block title %}خوانش‌ها — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>خوانش‌ها</h1>
+    <p>{{ total | fa }} خوانش ثبت‌شده در دیتابیس</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/readings.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV</a>
+  </div>
+</div>
+
+<div class="card card--flat" style="margin-bottom:14px">
+  <div class="page-links">
+    <a href="{{ admin_path }}readings" class="{% if not kind %}is-active{% endif %}">همه</a>
+    {% for key in METHOD_ORDER %}
+      <a href="{{ admin_path }}readings?kind={{ key }}" class="{% if kind == key %}is-active{% endif %}">{{ METHODS[key].label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>توکن</th><th>کاربر</th><th>روش</th><th>موضوع</th>
+          <th>سرتیتر و ابیات</th><th>نیت</th><th class="num">انرژی</th><th>تاریخ</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in readings %}
+          <tr>
+            <td class="mono"><a href="{{ admin_path }}readings/{{ item.id }}">{{ item.id }}</a></td>
+            <td>
+              <a href="{{ admin_path }}users/{{ item.user_id }}">{{ item.user_label }}</a>
+              <div class="muted mono">{{ item.phone | fa }}</div>
+            </td>
+            <td class="nowrap">{{ item.kind_label }}</td>
+            <td class="nowrap">{{ item.topic_label }}</td>
+            <td>
+              <b>{{ item.headline }}</b>
+              {% if item.lines %}<div class="muted">{{ item.lines | join(' / ') }}</div>{% endif %}
+            </td>
+            <td>{{ item.intent or '—' }}</td>
+            <td class="num">{{ item.overall | fa }}٪</td>
+            <td class="nowrap muted">{{ item.created_label }}</td>
+            <td>
+              <form method="post" action="{{ admin_path }}readings/{{ item.id }}/delete">
+                <button class="btn btn--sm btn--ghost" type="submit" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="muted">خوانشی با این فیلتر پیدا نشد.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if pages > 1 %}
+  <div class="row" style="margin-top:14px">
+    {% if page_number > 1 %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}readings?kind={{ kind }}&page_number={{ page_number - 1 }}">قبلی</a>
+    {% endif %}
+    <span class="muted">صفحهٔ {{ page_number | fa }} از {{ pages | fa }}</span>
+    {% if page_number < pages %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}readings?kind={{ kind }}&page_number={{ page_number + 1 }}">بعدی</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

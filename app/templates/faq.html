@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}پرسش‌ها — نشانه{% endblock %}
+
+{% block content %}
+<section class="page-head anim-in">
+  <h1>پرسش‌های پرتکرار</h1>
+  <p>هر چه دربارهٔ نشانه باید بدانی، کوتاه و شفاف.</p>
+</section>
+
+<div class="faq-list anim-in anim-delay-1">
+  {% for item in FAQ %}
+    <details class="faq">
+      <summary>{{ item.q }}<i class="fa-solid fa-plus" aria-hidden="true"></i></summary>
+      <p>{{ item.a }}</p>
+    </details>
+  {% endfor %}
+  <details class="faq">
+    <summary>چه روش‌های فالی دارید؟<i class="fa-solid fa-plus" aria-hidden="true"></i></summary>
+    <p>فال حافظ، کارت تاروت، طالع امروز، عددشناسی، سنگ رون، طالع چینی و فال تاس.</p>
+  </details>
+  <details class="faq">
+    <summary>تست‌های شخصیت کدام‌اند؟<i class="fa-solid fa-plus" aria-hidden="true"></i></summary>
+    <p>MBTI، کهن‌الگوهای خدایان یونانی، انیاگرام، زبان عشق و سبک رفتاری DISC.</p>
+  </details>
+  <details class="faq">
+    <summary>نتیجه‌ها را کجا می‌بینم؟<i class="fa-solid fa-plus" aria-hidden="true"></i></summary>
+    <p>در صفحهٔ پروفایل؛ هم فال‌ها و هم نتیجهٔ آخرین تست‌هایت ذخیره می‌شوند.</p>
+  </details>
+</div>
+
+<a class="btn btn--ghost btn--block anim-in anim-delay-2" href="/"><i class="fa-solid fa-house" aria-hidden="true"></i> بازگشت به خانه</a>
+{% endblock %}

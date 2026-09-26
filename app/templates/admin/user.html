@@ -1,0 +1,256 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ user.name or user.phone }} — پروندهٔ کاربر{% endblock %}
+
+{% block content %}
+{% set ok_code = request.query_params.get('ok', '') %}
+{% set err_code = request.query_params.get('error', '') %}
+
+{% if life %}
+  <div class="card" style="margin-bottom:14px">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> زندگی در عدد — {{ life.age_label }}</h2>
+      <span class="muted">{{ life.headline }}</span>
+    </div>
+    <div class="life-grid">
+      {% for card in life.time[:3] + life.body[:3] + life.world[:2] %}
+        <div class="life-card">
+          <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+          <div class="life-card__value">{{ card.value }}</div>
+          <div class="life-card__label">{{ card.label }}</div>
+          <div class="life-card__hint">{{ card.hint }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<div class="topbar">
+  <div>
+    <h1>{{ full_name }}</h1>
+    <p><span class="mono">{{ user.phone | fa }}</span> • ثبت‌نام {{ created_label }} • آخرین ورود {{ last_login_label }}</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--sm" href="{{ admin_path }}users/{{ user_id }}/dossier">
+      <i class="fa-solid fa-file-lines" aria-hidden="true"></i> پروندهٔ کامل کاربر
+    </a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}users">بازگشت به فهرست</a>
+  </div>
+</div>
+
+{% if ok_code == 'profile' %}<div class="alert alert--ok">پروفایل کاربر ذخیره شد.</div>{% endif %}
+{% if ok_code == 'journey' %}<div class="alert alert--ok">پیش‌نویس سفر کاربر پاک شد.</div>{% endif %}
+{% if ok_code == 'reading-deleted' %}<div class="alert alert--ok">خوانش انتخاب‌شده حذف شد.</div>{% endif %}
+{% if err_code == 'confirm' %}<div class="alert alert--error">برای حذف کاربر باید در کادر تأیید کلمهٔ «بله» را بنویسی.</div>{% endif %}
+{% if err_code %}{% if err_code != 'confirm' %}<div class="alert alert--error">ذخیره نشد: {{ err_code }}</div>{% endif %}{% endif %}
+
+<div class="grid grid--2">
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-id-card" aria-hidden="true"></i> هر چیزی که کاربر وارد کرده</h2>
+      <span class="badge {% if user.name and user.jy %}badge--ok{% else %}badge--warn{% endif %}">
+        {% if user.name and user.jy %}پروفایل کامل{% else %}پروفایل ناقص{% endif %}
+      </span>
+    </div>
+
+    <dl class="profile-grid">
+      <div class="item"><dt>شناسه</dt><dd class="num">{{ user.id | fa }}</dd></div>
+      <div class="item"><dt>شمارهٔ موبایل</dt><dd class="mono">{{ user.phone | fa }}</dd></div>
+      <div class="item">
+        <dt>نام کاربری</dt>
+        <dd class="ltr">{% if user.username %}@{{ user.username }}{% else %}<span class="badge badge--warn">بدون رمز</span>{% endif %}</dd>
+      </div>
+      <div class="item"><dt>نام</dt><dd>{{ user.name or '—' }}</dd></div>
+      <div class="item"><dt>نام خانوادگی</dt><dd>{{ user.family or '—' }}</dd></div>
+      <div class="item"><dt>جنسیت</dt><dd>
+        {% if user.gender == 'f' %}خانم{% elif user.gender == 'm' %}آقا{% else %}نگفته{% endif %}
+      </dd></div>
+      <div class="item"><dt>تاریخ تولد (شمسی)</dt><dd>{{ birth_label }}</dd></div>
+      <div class="item"><dt>ساعت تولد</dt><dd class="num">{{ user.birth_time | fa if user.birth_time else '—' }}</dd></div>
+      <div class="item"><dt>شهر</dt><dd>{{ user.city or '—' }}</dd></div>
+      <div class="item"><dt>سن تقریبی</dt><dd class="num">{% if age is not none %}{{ age | fa }} سال{% else %}—{% endif %}</dd></div>
+    </dl>
+
+    <details style="margin-top:14px">
+      <summary>ویرایش پروفایل این کاربر</summary>
+      <form method="post" action="{{ admin_path }}users/{{ user_id }}/profile" style="margin-top:12px">
+        <div class="grid grid--2">
+          <label class="field"><span>نام</span>
+            <input type="text" name="name" value="{{ user.name or '' }}" maxlength="40" required>
+          </label>
+          <label class="field"><span>نام خانوادگی</span>
+            <input type="text" name="family" value="{{ user.family or '' }}" maxlength="40" required>
+          </label>
+          <label class="field"><span>جنسیت</span>
+            <select name="gender">
+              <option value="" {% if not user.gender %}selected{% endif %}>نگفتن</option>
+              <option value="f" {% if user.gender == 'f' %}selected{% endif %}>خانم</option>
+              <option value="m" {% if user.gender == 'm' %}selected{% endif %}>آقا</option>
+            </select>
+          </label>
+          <label class="field"><span>سال تولد</span>
+            <input class="num" type="number" name="jy" value="{{ user.jy or 1370 }}" min="1300" max="1420">
+          </label>
+          <label class="field"><span>ماه تولد (۱ تا ۱۲)</span>
+            <input class="num" type="number" name="jm" value="{{ user.jm or 1 }}" min="1" max="12">
+          </label>
+          <label class="field"><span>روز تولد</span>
+            <input class="num" type="number" name="jd" value="{{ user.jd or 1 }}" min="1" max="31">
+          </label>
+          <label class="field"><span>ساعت تولد</span>
+            <input class="num" type="text" name="birth_time" value="{{ user.birth_time or '' }}" placeholder="08:30">
+          </label>
+          <label class="field"><span>شهر</span>
+            <input type="text" name="city" value="{{ user.city or '' }}" maxlength="40">
+          </label>
+        </div>
+        <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> ذخیرهٔ پروفایل</button>
+      </form>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-compass" aria-hidden="true"></i> وضعیت سفر و ساخت فال</h2>
+    </div>
+
+    <dl class="profile-grid">
+      <div class="item"><dt>آخرین روش انتخاب‌شده</dt><dd>{{ draft_kind_label }}</dd></div>
+      <div class="item"><dt>آخرین موضوع</dt><dd>{{ draft_topic_label }}</dd></div>
+      <div class="item" style="grid-column: 1 / -1"><dt>متن نیت ثبت‌شده</dt><dd>{{ draft.intent or '—' }}</dd></div>
+    </dl>
+
+    <form method="post" action="{{ admin_path }}users/{{ user_id }}/journey/reset" style="margin-top:10px">
+      <button class="btn btn--ghost btn--sm" type="submit"><i class="fa-solid fa-eraser" aria-hidden="true"></i> پاک‌کردن پیش‌نویس سفر</button>
+    </form>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+
+    <p class="note">می‌توانی برای این کاربر یک خوانش تازه بسازی؛ فالش در پروندهٔ او ثبت می‌شود و لینکش را همان‌جا می‌بینی.</p>
+    <form class="row" method="post" action="{{ admin_path }}users/{{ user_id }}/fortune" style="margin-top:10px">
+      <select name="method" style="max-width:190px">
+        {% for key in METHOD_ORDER %}
+          <option value="{{ key }}">{{ METHODS[key].label }}</option>
+        {% endfor %}
+      </select>
+      <select name="topic" style="max-width:190px">
+        {% for key in TOPIC_ORDER %}
+          <option value="{{ key }}">{{ TOPICS[key].label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn" type="submit"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> ساخت فال برای کاربر</button>
+    </form>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+
+    <p class="note" style="color:#91271c;background:#fdeceb">
+      حذف کاربر، پروفایل، فال‌ها، جواب تست‌ها و نشست‌هایش را برای همیشه پاک می‌کند.
+    </p>
+    <form class="row" method="post" action="{{ admin_path }}users/{{ user_id }}/delete" style="margin-top:10px">
+      <input type="text" name="confirm" placeholder="برای تأیید «بله» بنویس" style="max-width:190px">
+      <button class="btn btn--danger" type="submit"><i class="fa-solid fa-trash" aria-hidden="true"></i> حذف کاربر</button>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-dice-d20" aria-hidden="true"></i> جواب تست‌های شخصیت ({{ attempts | length | fa }} تلاش)</h2>
+    <a class="muted" href="{{ admin_path }}export/attempts.csv">خروجی CSV همهٔ کاربران</a>
+  </div>
+
+  {% for attempt in attempts %}
+    <div class="card card--flat" style="margin-bottom:12px;background:var(--surface-2)">
+      <div class="card__head">
+        <h2>
+          <i class="{{ attempt.icon }}" aria-hidden="true"></i> {{ attempt.test_label }}
+          {% if attempt.completed %}
+            <span class="badge badge--ok">تمام‌شده</span>
+          {% else %}
+            <span class="badge badge--warn">نیمه‌کاره</span>
+          {% endif %}
+        </h2>
+        <span class="muted num">
+          {{ attempt.answered | fa }} از {{ attempt.total | fa }} سوال —
+          {{ attempt.finished_label or attempt.created_label }}
+        </span>
+      </div>
+
+      {% if attempt.result_key %}
+        <p class="note" style="margin-bottom:10px">
+          نتیجه: <b>{{ attempt.result_label or attempt.result_key }}</b>
+          <span class="muted">(کد {{ attempt.result_key }})</span>
+          {% if attempt.scores %}
+            — امتیازها:
+            {% for key, value in attempt.scores.items() %}<span class="badge badge--muted">{{ key | fa }}: {{ value | fa }}</span> {% endfor %}
+          {% endif %}
+        </p>
+      {% endif %}
+
+      <div class="qa">
+        {% for row in attempt.rows %}
+          <div class="qa__item">
+            <div class="qa__q">{{ row.number | fa }}. {{ row.question }}</div>
+            {% if row.answer %}
+              <div class="qa__a"><i class="fa-solid fa-check" aria-hidden="true"></i> {{ row.answer }}</div>
+            {% else %}
+              <div class="qa__a qa__a--empty">بدون جواب</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="muted">این کاربر هیچ تستی شروع نکرده است.</p>
+  {% endfor %}
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال‌های این کاربر ({{ readings | length | fa }})</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>توکن</th><th>روش</th><th>موضوع</th><th>سرتیتر</th><th>نیت</th><th class="num">انرژی</th><th>تاریخ</th><th></th></tr></thead>
+      <tbody>
+        {% for item in readings %}
+          <tr>
+            <td class="mono"><a href="{{ admin_path }}readings/{{ item.id }}">{{ item.id }}</a></td>
+            <td>{{ item.kind_label }}</td>
+            <td>{{ item.topic_label }}</td>
+            <td>{{ item.headline }}</td>
+            <td>{{ item.intent or '—' }}</td>
+            <td class="num">{{ item.overall | fa }}٪</td>
+            <td class="nowrap muted">{{ item.created_label }}</td>
+            <td>
+              <form method="post" action="{{ admin_path }}readings/{{ item.id }}/delete">
+                <input type="hidden" name="user_id" value="{{ user_id }}">
+                <button class="btn btn--sm btn--ghost" type="submit" title="حذف این خوانش"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="muted">هنوز فالی نگرفته است.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> رویدادهای این کاربر</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>رویداد</th><th>زمان</th></tr></thead>
+      <tbody>
+        {% for event in events %}
+          <tr><td class="mono">{{ event.name }}</td><td class="nowrap muted">{{ event.created_label }}</td></tr>
+        {% else %}
+          <tr><td colspan="2" class="muted">رویدادی ثبت نشده است.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

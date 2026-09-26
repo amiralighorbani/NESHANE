@@ -1,0 +1,161 @@
+{% extends "admin/base.html" %}
+{% block title %}داشبورد — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>داشبورد</h1>
+    <p>{{ today }} — نگاه کلی به کاربران، فال‌ها و تست‌ها</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/users.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> کاربران (CSV)</a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/attempts.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> جواب تست‌ها (CSV)</a>
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/readings.csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> خوانش‌ها (CSV)</a>
+  </div>
+</div>
+
+<div class="grid grid--4">
+  <div class="card stat">
+    <span class="stat__value">{{ stats.users | fa }}</span>
+    <span class="stat__label">کاربر</span>
+    <span class="stat__hint">{{ stats.users_24h | fa }} در ۲۴ ساعت، {{ stats.users_7d | fa }} در یک هفته</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ stats.readings | fa }}</span>
+    <span class="stat__label">خوانش ثبت‌شده</span>
+    <span class="stat__hint">استخر فال: {{ pool.total | fa }} کارت ({{ pool.web | fa }} غزل واقعی)</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ stats.attempts | fa }}</span>
+    <span class="stat__label">تست تمام‌شده</span>
+    <span class="stat__hint">{{ stats.attempts_open | fa }} تلاش نیمه‌کاره</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ stats.ok_logins | fa }}</span>
+    <span class="stat__label">ورود موفق مدیر (هفته)</span>
+    <span class="stat__hint">{{ stats.failed_logins | fa }} تلاش ناموفق</span>
+  </div>
+</div>
+
+<div class="grid grid--2" style="margin-top:14px">
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> خوانش‌ها به تفکیک روش</h2>
+      <a class="muted" href="{{ admin_path }}readings">همه</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>روش</th><th class="num">تعداد</th><th></th></tr></thead>
+        <tbody>
+          {% for item in kind_rows %}
+            <tr>
+              <td><i class="{{ item.icon }}" aria-hidden="true"></i> {{ item.label }}</td>
+              <td class="num">{{ item.count | fa }}</td>
+              <td style="width:45%">
+                <div class="bar"><span style="width: {{ (100 * item.count / (stats.readings or 1)) | round(1) }}%"></span></div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="muted">هنوز خوانشی ثبت نشده است.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-brain" aria-hidden="true"></i> تست‌های تمام‌شده</h2>
+      <a class="muted" href="{{ admin_path }}export/attempts.csv">خروجی</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>تست</th><th class="num">تمام‌شده</th></tr></thead>
+        <tbody>
+          {% for item in test_rows %}
+            <tr>
+              <td>{{ item.label }}</td>
+              <td class="num">{{ item.count | fa }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid--2" style="margin-top:14px">
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-user-plus" aria-hidden="true"></i> تازه‌ترین کاربران</h2>
+      <a class="muted" href="{{ admin_path }}users">فهرست کامل</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>نام</th><th>موبایل</th><th>ثبت</th></tr></thead>
+        <tbody>
+          {% for item in recent_users %}
+            <tr>
+              <td class="num"><a href="{{ admin_path }}users/{{ item.id }}">{{ item.id | fa }}</a></td>
+              <td>{{ item.name or '—' }}</td>
+              <td class="num mono">{{ item.phone | fa }}</td>
+              <td class="nowrap muted">{{ item.created_label }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="muted">کاربری ثبت نشده است.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__head">
+      <h2><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> تازه‌ترین خوانش‌ها</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>کاربر</th><th>روش</th><th>سرتیتر</th><th class="num">انرژی</th></tr></thead>
+        <tbody>
+          {% for item in recent_readings %}
+            <tr>
+              <td class="num"><a href="{{ admin_path }}users/{{ item.user_id }}">{{ item.user_id | fa }}</a></td>
+              <td>{{ METHODS[item.kind].label if item.kind in METHODS else item.kind }}</td>
+              <td><a href="{{ admin_path }}readings/{{ item.id }}">{{ item.headline }}</a></td>
+              <td class="num">{{ item.overall | fa }}٪</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="muted">خوانشی ثبت نشده است.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card__head">
+    <h2><i class="fa-solid fa-route" aria-hidden="true"></i> پیش‌نویس‌های سفر (نیت‌های ثبت‌شده)</h2>
+    <a class="muted" href="{{ admin_path }}audit">رویدادها</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>کاربر</th><th>روش</th><th>موضوع</th><th>نیت</th><th>به‌روزرسانی</th></tr></thead>
+      <tbody>
+        {% for draft in drafts %}
+          <tr>
+            <td class="num"><a href="{{ admin_path }}users/{{ draft.user_id }}">{{ draft.user_id | fa }}</a></td>
+            <td>{{ draft.user_name or draft.phone or '—' }}</td>
+            <td>{{ METHODS[draft.kind].label if draft.kind in METHODS else '—' }}</td>
+            <td>{{ TOPICS[draft.topic].label if draft.topic in TOPICS else '—' }}</td>
+            <td>{{ draft.intent or '—' }}</td>
+            <td class="nowrap muted">{{ stamp(draft.updated_at) }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">پیش‌نویسی ذخیره نشده است.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

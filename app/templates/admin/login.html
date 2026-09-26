@@ -1,0 +1,43 @@
+{% block title %}ورود مدیریت{% endblock %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ورود مدیریت — نشانه</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/admin.css?v={{ ASSET_VERSION() }}">
+</head>
+<body class="login-page">
+  <form class="login-card" method="post" action="{{ admin_path }}" autocomplete="off">
+    <div class="login-mark"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></div>
+    <h1>ورود به پنل مدیریت</h1>
+    <p class="lead">این صفحه در هیچ‌جای سایت لینک نشده است. پس از پنج تلاش ناموفق، ورود برای مدتی قفل می‌شود.</p>
+
+    {% if configured is defined and not configured %}
+      {# هیچ رمز پیش‌فرضی در سورس نیست؛ تا وقتی .env ساخته نشود، ورود بسته است. #}
+      <div class="alert alert--error">
+        رمز مدیر تنظیم نشده است. فایل <code>.env.example</code> را به <code>.env</code> کپی کن و
+        <code>NESHANE_ADMIN_USER</code> و <code>NESHANE_ADMIN_PASSWORD</code> را پر کن.
+      </div>
+    {% endif %}
+
+    {% if error %}<div class="alert alert--error">{{ error }}</div>{% endif %}
+
+    <label class="field">
+      <span>نام کاربری</span>
+      <input class="ltr" type="text" name="username" value="{{ username }}" autocomplete="username" required autofocus>
+    </label>
+    <label class="field">
+      <span>پسورد</span>
+      <input class="ltr" type="password" name="password" autocomplete="current-password" required>
+    </label>
+
+    <button class="btn btn--block" type="submit">
+      <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> ورود
+    </button>
+  </form>
+</body>
+</html>

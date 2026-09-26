@@ -1,0 +1,146 @@
+{% extends "admin/base.html" %}
+{% block title %}استخر فال — پنل مدیریت{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>استخر فال</h1>
+    <p>{{ info.total | fa }} کارت فعال در دسترس کاربران — می‌توانی کارت تازه بسازی، ویرایش کنی یا پنهان کنی</p>
+  </div>
+  <div class="topbar__meta">
+    <a class="btn btn--sm" href="{{ admin_path }}fortunes/new"><i class="fa-solid fa-plus" aria-hidden="true"></i> کارت فال تازه</a>
+  </div>
+</div>
+
+{% if ok == 'saved' %}<div class="alert alert--ok">کارت فال ذخیره شد و از همین حالا در استخر است.</div>{% endif %}
+{% if ok == 'hidden' %}<div class="alert alert--ok">کارت پنهان شد؛ دیگر به کاربران داده نمی‌شود.</div>{% endif %}
+{% if ok == 'restored' %}<div class="alert alert--ok">کارت دوباره فعال شد.</div>{% endif %}
+{% if ok == 'deleted' %}<div class="alert alert--ok">کارت حذف شد.</div>{% endif %}
+{% if ok == 'reverted' %}<div class="alert alert--ok">کارت به متن اصلی پروژه برگشت.</div>{% endif %}
+{% if error == 'notfound' %}<div class="alert alert--error">کارتی با این شناسه پیدا نشد.</div>{% endif %}
+{% if error == 'required' %}<div class="alert alert--error">حداقل یک مصراع و متن تعبیر لازم است.</div>{% endif %}
+
+<div class="grid grid--4">
+  <div class="card stat">
+    <span class="stat__value">{{ info.total | fa }}</span>
+    <span class="stat__label">کارت فعال</span>
+    <span class="stat__hint">از مجموع {{ info.base_total | fa }} کارت پایه</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ info.web | fa }}</span>
+    <span class="stat__label">غزل واقعی از نت</span>
+    <span class="stat__hint">تعبیر ساخته‌شده با موتور تم</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ info.curated | fa }}</span>
+    <span class="stat__label">دست‌نویس پروژه</span>
+    <span class="stat__hint">{{ info.edited | fa }} کارت ویرایش‌شده</span>
+  </div>
+  <div class="card stat">
+    <span class="stat__value">{{ info.custom | fa }}</span>
+    <span class="stat__label">ساختهٔ خودت</span>
+    <span class="stat__hint">{{ info.hidden | fa }} کارت پنهان‌شده</span>
+  </div>
+</div>
+
+<div class="card card--flat" style="margin:14px 0">
+  <form class="row" method="get" action="{{ admin_path }}fortunes">
+    <input type="search" name="q" value="{{ q }}" placeholder="جست‌وجو در ابیات، تعبیر یا کلیدواژه…" style="max-width:280px">
+    <select name="source" style="max-width:180px">
+      <option value="">همهٔ منابع</option>
+      <option value="web" {% if source == 'web' %}selected{% endif %}>غزل واقعی از نت</option>
+      <option value="curated" {% if source == 'curated' %}selected{% endif %}>دست‌نویس پروژه</option>
+      <option value="custom" {% if source == 'custom' %}selected{% endif %}>ساختهٔ مدیر</option>
+      <option value="edited" {% if source == 'edited' %}selected{% endif %}>ویرایش‌شده</option>
+    </select>
+    <select name="theme" style="max-width:200px">
+      <option value="">همهٔ مضمون‌ها</option>
+      {% for label in info.themes.keys() %}
+        <option value="{{ label }}" {% if theme == label %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="show" style="max-width:150px">
+      <option value="all" {% if show == 'all' %}selected{% endif %}>همه</option>
+      <option value="visible" {% if show == 'visible' %}selected{% endif %}>فعال</option>
+      <option value="hidden" {% if show == 'hidden' %}selected{% endif %}>پنهان</option>
+    </select>
+    <button class="btn" type="submit"><i class="fa-solid fa-filter" aria-hidden="true"></i> فیلتر</button>
+    {% if source or theme or q %}<a class="btn btn--ghost" href="{{ admin_path }}fortunes">پاک‌کردن</a>{% endif %}
+  </form>
+</div>
+
+<p class="muted">{{ total_cards | fa }} کارت با این فیلتر پیدا شد.</p>
+
+{% for card in cards %}
+  <article class="fortune-card {% if card.hidden %}is-hidden{% endif %}">
+    <div class="fortune-card__head">
+      <div class="fortune-card__meta">
+        <span class="badge">{{ card.title }}</span>
+        <span class="badge badge--muted">{{ card.source_label }}</span>
+        {% if card.theme_label %}<span class="badge badge--muted">{{ card.theme_label }}</span>{% endif %}
+        {% if card.hidden %}<span class="badge badge--danger">پنهان</span>{% endif %}
+        <span class="mono muted">{{ card.key }}</span>
+      </div>
+      <div class="fortune-card__actions">
+        <a class="btn btn--ghost btn--sm" href="{{ admin_path }}fortunes/{{ card.key }}/edit">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i> ویرایش
+        </a>
+        {% if card.hidden %}
+          <form method="post" action="{{ admin_path }}fortunes/{{ card.key }}/restore">
+            <button class="btn btn--sm" type="submit"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> بازگرداندن</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ admin_path }}fortunes/{{ card.key }}/delete"
+                onsubmit="return confirm('{% if card.builtin %}این کارت پنهان شود؟{% else %}این کارت حذف شود؟{% endif %}');">
+            <button class="btn btn--danger btn--sm" type="submit">
+              <i class="fa-solid {% if card.builtin %}fa-eye-slash{% else %}fa-trash{% endif %}" aria-hidden="true"></i>
+              {% if card.builtin %}پنهان{% else %}حذف{% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if card.verses %}
+      <ul class="verse">
+        {% for line in card.verses %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    <p>{{ card.interpretation }}</p>
+    {% if card.guidance %}<p class="note"><i class="fa-solid fa-compass" aria-hidden="true"></i> {{ card.guidance }}</p>{% endif %}
+    {% if card.keywords %}<p class="muted">کلیدواژه‌ها: {{ card.keywords | join('، ') }}</p>{% endif %}
+  </article>
+{% else %}
+  <div class="card"><p class="muted">کاری با این فیلتر پیدا نشد.</p></div>
+{% endfor %}
+
+{% if pages > 1 %}
+  <div class="row" style="margin-top:14px">
+    {% if page_number > 1 %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}fortunes?q={{ q }}&source={{ source }}&theme={{ theme }}&show={{ show }}&page_number={{ page_number - 1 }}">قبلی</a>
+    {% endif %}
+    <span class="muted">صفحهٔ {{ page_number | fa }} از {{ pages | fa }}</span>
+    {% if page_number < pages %}
+      <a class="btn btn--ghost btn--sm" href="{{ admin_path }}fortunes?q={{ q }}&source={{ source }}&theme={{ theme }}&show={{ show }}&page_number={{ page_number + 1 }}">بعدی</a>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="card" style="margin-top:18px">
+  <div class="card__head"><h2><i class="fa-solid fa-layer-group" aria-hidden="true"></i> پراکنش مضمون‌ها</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>مضمون</th><th class="num">تعداد</th><th></th></tr></thead>
+      <tbody>
+        {% for label, count in info.themes.items() %}
+          <tr>
+            <td>{{ label }}</td>
+            <td class="num">{{ count | fa }}</td>
+            <td style="width:50%"><div class="bar"><span style="width: {{ (100 * count / (info.total or 1)) | round(1) }}%"></span></div></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

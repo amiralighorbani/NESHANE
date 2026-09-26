@@ -1,0 +1,97 @@
+{# ---------------------------------------------------------------------------
+   صحنهٔ نمادها: هر روش فال، شیءِ واقعیِ خودش را نشان می‌دهد.
+   تاروت سه کارت، تاس سه تاسِ نقطه‌دار، رون یک سنگ، عدد یک لوحِ عدد و
+   طالع/چینی نماد خودشان. با `block.visual` انتخاب می‌شود.
+   --------------------------------------------------------------------------- #}
+{% if block.symbols %}
+  <div class="symbol-stage symbol-stage--{{ block.visual or 'plain' }}">
+    {% if block.visual_label %}
+      <span class="symbol-stage__label"><i class="fa-solid fa-hand-sparkles" aria-hidden="true"></i> {{ block.visual_label }}</span>
+    {% endif %}
+
+    {% if block.visual == 'cards' %}
+      <div class="tarot-row">
+        {% for symbol in block.symbols %}
+          <figure class="tarot-card {% if symbol.orientation == 'reversed' %}is-reversed{% endif %}">
+            <span class="tarot-card__corner ltr">{{ symbol.numeral }}</span>
+            <span class="tarot-card__face"><i class="{{ symbol.icon }}" aria-hidden="true"></i></span>
+            <figcaption class="tarot-card__name">{{ symbol.name }}</figcaption>
+            <span class="tarot-card__dir">{{ symbol.orientation_label }}</span>
+            <span class="tarot-card__pos">{{ symbol.position }}</span>
+            {% if symbol.position_note %}<span class="tarot-card__note">{{ symbol.position_note }}</span>{% endif %}
+          </figure>
+        {% endfor %}
+      </div>
+
+    {% elif block.visual == 'dice' %}
+      <div class="dice-row">
+        {% for symbol in block.symbols %}
+          {% set dots = symbol.dots.split(',') %}
+          <div class="die-box">
+            <span class="die" role="img" aria-label="{{ symbol.label }}: {{ symbol.name }}">
+              {% for cell in range(9) %}<i class="die__pip {% if cell | string in dots %}is-on{% endif %}"></i>{% endfor %}
+            </span>
+            <strong class="die-box__value ltr">{{ symbol.name }}</strong>
+            <span class="die-box__label">{{ symbol.label }}</span>
+            <small class="die-box__caption">{{ symbol.caption }}</small>
+          </div>
+        {% endfor %}
+      </div>
+
+    {% elif block.visual == 'rune' %}
+      {% for symbol in block.symbols %}
+        <div class="rune-box">
+          <span class="rune-stone {% if symbol.orientation == 'reversed' %}is-reversed{% endif %}">
+            <span class="rune-stone__glyph">{{ symbol.glyph }}</span>
+          </span>
+          <div class="rune-box__body">
+            <strong>{{ symbol.name }}</strong>
+            <span class="rune-box__meta">{{ symbol.orientation_label }}{% if symbol.keywords %} • {{ symbol.keywords }}{% endif %}</span>
+            {% if symbol.position_note %}<small>{{ symbol.position_note }}</small>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+    {% elif block.visual == 'glyph' %}
+      {% for symbol in block.symbols %}
+        <div class="glyph-box">
+          <span class="glyph-disc">
+            {% if symbol.icon %}<i class="{{ symbol.icon }}" aria-hidden="true"></i>{% endif %}
+            <b class="glyph-disc__value">{{ symbol.glyph }}</b>
+          </span>
+          <div class="glyph-box__body">
+            <strong>{{ symbol.name }}</strong>
+            <span class="glyph-box__meta">{{ symbol.orientation_label }}{% if symbol.keywords %} • {{ symbol.keywords }}{% endif %}</span>
+            {% if symbol.position_note %}<small>{{ symbol.position_note }}</small>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+    {% elif block.visual == 'sign' or block.visual == 'animal' %}
+      {% for symbol in block.symbols %}
+        <div class="emblem-box">
+          <span class="emblem">
+            {% if block.visual == 'animal' %}<i class="{{ symbol.icon }}" aria-hidden="true"></i>{% else %}<span class="emblem__glyph">{{ symbol.glyph }}</span>{% endif %}
+          </span>
+          <div class="emblem-box__body">
+            <strong>{{ symbol.name }}</strong>
+            <span class="emblem-box__meta">{{ symbol.orientation_label }}{% if symbol.position_note %} • {{ symbol.position_note }}{% endif %}</span>
+            {% if symbol.keywords %}<small>{{ symbol.keywords }}</small>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+    {% elif block.visual == 'verses' %}
+      {% for symbol in block.symbols %}
+        <div class="scroll-box">
+          <span class="scroll-box__seal"><i class="{{ symbol.icon }}" aria-hidden="true"></i></span>
+          <div class="scroll-box__body">
+            <strong>{{ symbol.name }}</strong>
+            <span class="scroll-box__meta">{{ symbol.position_note }}</span>
+            {% if symbol.keywords %}<small>کلیدواژه: {{ symbol.keywords }}</small>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+{% endif %}

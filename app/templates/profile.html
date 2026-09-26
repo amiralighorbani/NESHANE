@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}پروفایل — نشانه{% endblock %}
+
+{% block content %}
+<section class="profile-card anim-in">
+  <div class="profile-card__head">
+    <span class="avatar avatar--lg"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+    <div>
+      <h1>{{ full_name or user.name or 'کاربر نشانه' }}</h1>
+      {% if user.username %}
+        <p class="ltr">@{{ user.username }}</p>
+      {% endif %}
+      <p class="ltr">{{ user.phone | mask_phone }}</p>
+    </div>
+    <a class="icon-btn" href="/welcome" aria-label="ویرایش نام و نام خانوادگی"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
+  </div>
+
+  <dl class="profile-facts">
+    <div><dt><i class="fa-solid fa-id-badge" aria-hidden="true"></i> نام کامل</dt><dd>{{ full_name or '—' }}</dd></div>
+    <div><dt><i class="fa-solid fa-cake-candles" aria-hidden="true"></i> تولد</dt><dd>{{ birth_label }}</dd></div>
+    <div><dt><i class="fa-solid fa-clock" aria-hidden="true"></i> ساعت</dt><dd>{{ user.birth_time | fa if user.birth_time else '—' }}</dd></div>
+    <div><dt><i class="fa-solid fa-venus-mars" aria-hidden="true"></i> جنسیت</dt><dd>{{ {'f': 'خانم', 'm': 'آقا'}.get(user.gender, 'نگفتن') }}</dd></div>
+    <div><dt><i class="fa-solid fa-location-dot" aria-hidden="true"></i> شهر</dt><dd>{{ user.city or '—' }}</dd></div>
+  </dl>
+
+  {% if sign %}
+    <div class="profile-sign">
+      <span class="sign-symbol">{{ sign.symbol }}</span>
+      <div>
+        <strong>برج {{ sign.name }}</strong>
+        <small>{{ sign.range }} • {{ sign.element }} • {{ sign.planet }}</small>
+      </div>
+      <a class="pill pill--ghost" href="/journey/topic">طالع بگیر</a>
+    </div>
+  {% endif %}
+
+  <div class="profile-actions">
+    <a class="pill pill--ghost" href="/welcome"><i class="fa-solid fa-user-pen" aria-hidden="true"></i> نام و فامیل</a>
+    <a class="pill pill--ghost" href="/birth"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> اطلاعات تولد</a>
+  </div>
+</section>
+
+{% if pending_step %}
+  <a class="profile-pending anim-in" href="{{ pending_step }}">
+    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+    <span>پروفایلت کامل نیست؛ برای دقیق‌شدن فال، این قدم را تمام کن.</span>
+    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+  </a>
+{% endif %}
+
+<section class="stat-strip anim-in anim-delay-1">
+  <div class="stat-strip__item">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+    <strong>{{ reading_count | fa }}</strong>
+    <span>فال</span>
+  </div>
+  <div class="stat-strip__item">
+    <i class="fa-solid fa-brain" aria-hidden="true"></i>
+    <strong>{{ test_count | fa }}</strong>
+    <span>تست</span>
+  </div>
+  <div class="stat-strip__item">
+    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+    <strong>{{ today.split(' ')[-1] }}</strong>
+    <span>امروز</span>
+  </div>
+</section>
+
+{% if life %}
+<section class="section anim-in anim-delay-1">
+  <div class="section__head">
+    <h2>زندگی در عدد</h2>
+    <a class="section__link" href="/life">همه <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+  </div>
+  <p class="section__lead">سن دقیقت {{ life.age_label }} — و چند عدد دیگر که فقط از تاریخ تولدت درمی‌آید.</p>
+  <div class="life-grid">
+    {% for card in life.time[:2] + life.body[:2] %}
+      <article class="life-card">
+        <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+        <strong class="life-card__value">{{ card.value }}</strong>
+        <span class="life-card__label">{{ card.label }}</span>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section anim-in anim-delay-2">
+  <div class="section__head">
+    <h2>نتیجهٔ تست‌های من</h2>
+    <a class="section__link" href="/tests">همه <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+  </div>
+  {% if results %}
+    <div class="result-chips">
+      {% for result in results %}
+        <a class="result-chip" href="/tests/{{ result.test_key }}/result/{{ result.attempt_id }}" style="--accent: {{ result.accent }}">
+          <span class="result-chip__icon">
+            {% if result.icon %}<i class="{{ result.icon }}" aria-hidden="true"></i>{% else %}{{ result.glyph }}{% endif %}
+          </span>
+          <span class="result-chip__body">
+            <small>{{ result.test_label }}</small>
+            <strong>{{ result.title }}</strong>
+          </span>
+          <span class="result-chip__code ltr">{{ result.code }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty empty--compact">
+      <i class="fa-solid fa-brain" aria-hidden="true"></i>
+      <p>هنوز تستی نداده‌ای. با MBTI شروع کن.</p>
+      <a class="btn btn--primary btn--sm" href="/tests">رفتن به تست‌ها</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="section anim-in anim-delay-3">
+  <div class="section__head">
+    <h2>آخرین فال‌ها</h2>
+    <a class="section__link" href="/readings">همه <i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+  </div>
+  {% if readings %}
+    <div class="history">
+      {% for item in readings[:5] %}
+        {% set method = item.method %}
+        <a class="history__item" href="/r/{{ item.id }}" style="--accent: {{ method.accent or '#6b4fbb' }}">
+          <span class="history__icon"><i class="{{ method.icon or 'fa-solid fa-star' }}" aria-hidden="true"></i></span>
+          <span class="history__body">
+            <strong>{{ item.headline }}</strong>
+            <small>{{ method.label or item.kind }}</small>
+          </span>
+          <span class="history__score">{{ item.overall | fa }}٪</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty empty--compact">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+      <p>لیست فال‌هایت خالی است.</p>
+      <a class="btn btn--primary btn--sm" href="/journey">اولین فال</a>
+    </div>
+  {% endif %}
+</section>
+
+<a class="btn btn--ghost btn--block anim-in anim-delay-4" href="/logout">
+  <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> خروج از حساب
+</a>
+{% endblock %}

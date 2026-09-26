@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% block title %}موردی پیدا نشد{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>پیدا نشد</h1>
+    <p>موردی که خواستی در دیتابیس نیست، یا حذف شده است.</p>
+  </div>
+</div>
+
+<div class="card">
+  <p class="muted">می‌توانی به <a href="{{ admin_path }}users">فهرست کاربران</a> یا <a href="{{ admin_path }}readings">خوانش‌ها</a> برگردی.</p>
+</div>
+{% endblock %}

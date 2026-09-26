@@ -1,0 +1,109 @@
+{% extends "admin/base.html" %}
+{% block title %}امتیاز و نظر — پنل نشانه{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <h1>امتیاز و نظر کاربران</h1>
+    <p class="muted">
+      هر کارتی که کاربر پس از بازگشت (بیش از ۲۴ ساعت غیبت) ثبت می‌کند اینجا می‌آید:
+      ستاره‌ها و نوشتهٔ آزاد او.
+    </p>
+  </div>
+  <div class="head__actions">
+    <a class="btn btn--ghost btn--sm" href="{{ admin_path }}export/feedback.csv">
+      <i class="fa-solid fa-file-csv" aria-hidden="true"></i> خروجی CSV
+    </a>
+  </div>
+</div>
+
+<div class="cards">
+  <article class="stat">
+    <span class="stat__label">میانگین امتیاز</span>
+    <strong class="stat__value">{{ stats.average | fa }}<small>/۵</small></strong>
+    <span class="stat__hint">از {{ stats.total | fa }} بازخورد</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">نظر نوشته‌شده</span>
+    <strong class="stat__value">{{ stats.comments | fa }}</strong>
+    <span class="stat__hint">{{ stats.commented_rate | fa }}٪ فقط امتیاز نداده‌اند</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">امتیاز ۵ و ۴</span>
+    <strong class="stat__value">
+      {{ (stats.distribution[5] + stats.distribution[4]) | fa }}
+    </strong>
+    <span class="stat__hint">۵ ستاره: {{ stats.distribution[5] | fa }} • ۴ ستاره: {{ stats.distribution[4] | fa }}</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">۳ ستاره و کمتر</span>
+    <strong class="stat__value">
+      {{ (stats.distribution[3] + stats.distribution[2] + stats.distribution[1]) | fa }}
+    </strong>
+    <span class="stat__hint">بازخوردهایی که باید سریع خوانده شوند</span>
+  </article>
+</div>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-chart-simple" aria-hidden="true"></i> توزیع ستاره‌ها</h2>
+  <div class="bars bars--rate">
+    {% for star in [5, 4, 3, 2, 1] %}
+      {% set value = stats.distribution[star] %}
+      <div class="bars__item">
+        <span class="bars__stack" style="height: {{ (100 * value / (stats.total or 1)) | round }}%">
+          <i style="height: 100%"></i>
+        </span>
+        <small>{{ star | fa }} ستاره</small>
+        <span class="bars__value">{{ value | fa }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-comments" aria-hidden="true"></i> فهرست بازخوردها</h2>
+  <div class="filters">
+    <a class="chip {% if not only_comments %}chip--on{% endif %}" href="{{ admin_path }}feedback">همه</a>
+    <a class="chip {% if only_comments %}chip--on{% endif %}" href="{{ admin_path }}feedback?comments=1">فقط نظرهای نوشته‌شده</a>
+  </div>
+
+  <ul class="feedback-list">
+    {% for row in rows %}
+      <li class="feedback">
+        {% set filled = row.stars | length %}
+        <header>
+          <span class="feedback__who">
+            {% if row.user_id %}
+              <a href="{{ admin_path }}users/{{ row.user_id }}">{{ row.name_label or row.phone or 'کاربر' }}</a>
+            {% else %}
+              کاربر حذف‌شده
+            {% endif %}
+          </span>
+          <span class="feedback__stars" dir="ltr">
+            {% for _ in row.stars %}<i class="fa-solid fa-star" aria-hidden="true"></i>{% endfor %}
+            {% for _ in range(5 - filled) %}<i class="fa-regular fa-star" aria-hidden="true"></i>{% endfor %}
+            <b>{{ row.rating | fa }}</b>
+          </span>
+          <span class="muted small">{{ row.created_label }}</span>
+        </header>
+        {% if row.comment %}
+          <p class="feedback__text">{{ row.comment }}</p>
+        {% else %}
+          <p class="muted small">فقط امتیاز داده و متنی ننوشته است.</p>
+        {% endif %}
+      </li>
+    {% else %}
+      <li class="muted">هنوز بازخوردی ثبت نشده است.</li>
+    {% endfor %}
+  </ul>
+
+  {% if pages > 1 %}
+    <div class="pager">
+      {% for number in range(1, pages + 1) %}
+        <a class="chip {% if number == page_number %}chip--on{% endif %}"
+           href="{{ admin_path }}feedback?comments={{ 1 if only_comments else 0 }}&page_number={{ number }}">{{ number | fa }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

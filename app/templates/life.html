@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}زندگی در عدد — نشانه{% endblock %}
+
+{% block content %}
+{% set total_days = stats.total_days %}
+{% set heartbeats = stats.heartbeats | round | int %}
+{% set meals = stats.meals | round | int %}
+{% set same_day = stats.same_day_people | round | int %}
+{% set ring_length = 326.7 %}
+<section class="life-hero anim-in">
+  <div class="life-hero__top">
+    <span class="life-hero__eyebrow">
+      <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> زندگی در عدد
+    </span>
+    {% if is_first %}
+      <span class="life-hero__fresh">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i> ثبت‌نامت کامل شد
+      </span>
+    {% endif %}
+  </div>
+
+  <div class="life-hero__grid">
+    <div class="life-hero__main">
+      <p class="life-hero__name">{{ full_name or 'دوست' }} جان، تا همین لحظه</p>
+      <h1 class="life-hero__age">
+        <span class="life-hero__num">{{ stats.years | fa }}</span>
+        <span class="life-hero__unit">سال</span>
+      </h1>
+      <p class="life-hero__sub">و {{ stats.months | fa }} ماه و {{ stats.days | fa }} روز زندگی</p>
+    </div>
+
+    <div class="life-ring" style="--value: {{ stats.life_progress }}">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="life-ring__track" cx="60" cy="60" r="52"></circle>
+        <circle class="life-ring__fill" cx="60" cy="60" r="52"
+                stroke-dasharray="{{ ring_length }}"
+                stroke-dashoffset="{{ (ring_length * (100 - stats.life_progress) / 100) | round(1) }}"></circle>
+      </svg>
+      <div class="life-ring__text">
+        <strong>{{ stats.life_progress | fa }}<small>٪</small></strong>
+        <span>از عمر میانگین</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="life-hero__lead">{{ stats.headline }}</p>
+
+  <div class="life-hero__chips">
+    <span><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> {{ stats.birth_label }}</span>
+    <span><i class="fa-solid fa-earth-asia" aria-hidden="true"></i> {{ stats.birth_gregorian }}</span>
+    <span><i class="fa-solid fa-sun" aria-hidden="true"></i> {{ stats.weekday }} — {{ stats.season }}</span>
+    <span><i class="fa-solid fa-star" aria-hidden="true"></i> {{ stats.sign.symbol }} {{ stats.sign.name }}</span>
+    <span><i class="{{ stats.animal.icon }}" aria-hidden="true"></i> سال {{ stats.animal.name }}</span>
+    <span><i class="fa-solid fa-hashtag" aria-hidden="true"></i> مسیر زندگی {{ stats.path.glyph }} — {{ stats.path.title }}</span>
+  </div>
+</section>
+
+<section class="life-pills anim-in anim-delay-1">
+  <article class="life-pill" style="--tint:#d9534f">
+    <span class="life-pill__icon"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i></span>
+    <strong class="life-pill__value" data-count>{{ heartbeats | fa }}</strong>
+    <span class="life-pill__label">ضربان قلب</span>
+  </article>
+  <article class="life-pill" style="--tint:#7c5cd6">
+    <span class="life-pill__icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span>
+    <strong class="life-pill__value" data-count>{{ total_days | fa }}</strong>
+    <span class="life-pill__label">روز زندگی</span>
+  </article>
+  <article class="life-pill" style="--tint:#c98a2e">
+    <span class="life-pill__icon"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+    <strong class="life-pill__value" data-count>{{ meals | fa }}</strong>
+    <span class="life-pill__label">وعدهٔ غذا</span>
+  </article>
+</section>
+
+<nav class="life-nav anim-in anim-delay-2" aria-label="بخش‌های گزارش">
+  <a href="#life-identity">شناسنامهٔ تولد</a>
+  {% for group in stats.groups %}
+    <a href="#life-{{ group.key }}">{{ group.title }}</a>
+  {% endfor %}
+</nav>
+
+<section class="life-section anim-in anim-delay-2" id="life-identity" style="--tint:#6b4fbb">
+  <div class="life-section__head">
+    <span class="life-section__icon"><i class="fa-solid fa-id-card-clip" aria-hidden="true"></i></span>
+    <h2>شناسنامهٔ لحظهٔ تولد</h2>
+    <a class="section__link" href="/birth">ویرایش <i class="fa-solid fa-pen" aria-hidden="true"></i></a>
+  </div>
+  <div class="life-grid">
+    {% for card in stats.identity %}
+      <article class="life-card">
+        <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+        <strong class="life-card__value">{{ card.value }}</strong>
+        <span class="life-card__label">{{ card.label }}</span>
+        {% if card.hint %}<small class="life-card__hint">{{ card.hint }}</small>{% endif %}
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% for group in stats.groups %}
+  <section class="life-section anim-in anim-delay-{{ loop.index + 2 }}" id="life-{{ group.key }}"
+           style="--tint: {{ group.tint }}">
+    <div class="life-section__head">
+      <span class="life-section__icon"><i class="{{ group.icon }}" aria-hidden="true"></i></span>
+      <h2>{{ group.title }}</h2>
+      <span class="life-section__count">{{ group.cards | length | fa }} سنجه</span>
+    </div>
+    <div class="life-grid">
+      {% for card in group.cards %}
+        <article class="life-card">
+          <span class="life-card__icon"><i class="{{ card.icon }}" aria-hidden="true"></i></span>
+          <strong class="life-card__value">{{ card.value }}</strong>
+          <span class="life-card__label">{{ card.label }}</span>
+          {% if card.hint %}<small class="life-card__hint">{{ card.hint }}</small>{% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}
+
+<section class="life-section anim-in">
+  <div class="life-note">
+    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+    <p>
+      این اعداد از تاریخ و ساعت تولدت حساب می‌شوند و بر پایهٔ میانگین‌های عمومی‌اند
+      (مثلاً ۷۲ ضربان قلب در دقیقه یا ۳ وعدهٔ غذا در روز)؛ پس برای سرگرمی و خودشناسی‌اند،
+      نه اندازه‌گیری پزشکی. حلقهٔ بالای صفحه سهم تو از عمر میانگین {{ stats.life_expectancy | fa }} ساله است.
+    </p>
+  </div>
+</section>
+
+<section class="life-section anim-in">
+  <div class="result-actions">
+    <a class="btn btn--primary btn--block" href="/journey">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> فال امروزت را بگیر
+    </a>
+    <button class="btn btn--ghost btn--block" type="button"
+            data-copy="زندگی من در عدد — {{ stats.age_label }}؛ {{ total_days | fa }} روز زندگی، {{ heartbeats | fa }} ضربان قلب، {{ meals | fa }} وعدهٔ غذا و {{ same_day | fa }} هم‌روز به دنیا آمده. (نشانه)">
+      <i class="fa-solid fa-copy" aria-hidden="true"></i> کپی خلاصهٔ زندگی‌ام
+    </button>
+  </div>
+</section>
+{% endblock %}

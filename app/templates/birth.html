@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}اطلاعات تولد — نشانه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in">
+  <div class="stepper" aria-label="مراحل ثبت‌نام">
+    <span class="stepper__dot is-done"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+    <span class="stepper__bar is-done"></span>
+    <span class="stepper__dot is-done"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+    <span class="stepper__bar is-done"></span>
+    <span class="stepper__dot is-active">۲</span>
+    <span class="stepper__bar"></span>
+    <span class="stepper__dot">۳</span>
+  </div>
+
+  <div class="flow__mark" style="--accent:#2f8fa8"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></div>
+  <h1 class="flow__title">تاریخ دقیق تولدت</h1>
+  <p class="flow__lead">
+    هرچه دقیق‌تر بدهی، خوانش و گزارش «زندگی در عدد» دقیق‌تر می‌شود. ساعت تولد اختیاری است،
+    ولی برای سیّارهٔ ساعت و بخشی از آمار به کار می‌آید.
+  </p>
+
+  {% if errors %}
+    <div class="alert anim-shake">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      <div>{% for error in errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <div class="sign-preview" id="signPreview" aria-live="polite">
+    <span class="sign-preview__icon"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
+    <span class="sign-preview__body">
+      <strong class="sign-preview__name">
+        {% if preview_sign %}{{ preview_sign.symbol }} {{ preview_sign.name }}{% else %}در حال محاسبه…{% endif %}
+      </strong>
+      <small class="sign-preview__meta">
+        {% if preview_sign %}{{ preview_sign.element }} • {{ preview_sign.range }}{% else %}برج تولد با تغییر تاریخ به‌روز می‌شود{% endif %}
+      </small>
+    </span>
+  </div>
+
+  <form class="form" method="post" action="/birth">
+    <div class="field">
+      <span class="field__label">تاریخ تولد (هجری شمسی)</span>
+      <div class="triple">
+        <select class="field__select" name="jd" id="birthDay" aria-label="روز">
+          {% for day in range(1, 32) %}
+            <option value="{{ day }}" {% if values.jd == day %}selected{% endif %}>{{ day | fa }}</option>
+          {% endfor %}
+        </select>
+        <select class="field__select" name="jm" id="birthMonth" aria-label="ماه">
+          {% for number, name in month_labels %}
+            <option value="{{ number }}" {% if values.jm == number %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+        <select class="field__select" name="jy" id="birthYear" aria-label="سال">
+          {% for year in year_choices | reverse %}
+            <option value="{{ year }}" {% if values.jy == year %}selected{% endif %}>{{ year | fa }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="field__label">ساعت تولد (اختیاری، اما مفید)</span>
+      <span class="field__control">
+        <i class="fa-solid fa-clock field__icon" aria-hidden="true"></i>
+        <select class="field__select" name="birth_time">
+          <option value="">نمی‌دانم</option>
+          {% for slot in birth_time_slots %}
+            <option value="{{ slot }}" {% if values.birth_time == slot %}selected{% endif %}>{{ slot | fa }}</option>
+          {% endfor %}
+        </select>
+      </span>
+    </label>
+
+    <label class="field">
+      <span class="field__label">شهر تولد (اختیاری)</span>
+      <span class="field__control">
+        <i class="fa-solid fa-location-dot field__icon" aria-hidden="true"></i>
+        <input class="field__input" type="text" name="city" value="{{ values.city }}" placeholder="تهران" maxlength="40">
+      </span>
+    </label>
+
+    <button class="btn btn--primary btn--block" type="submit">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> ذخیره و دیدن زندگی در عدد
+    </button>
+  </form>
+
+  <a class="btn btn--ghost btn--block" href="/welcome">
+    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i> بازگشت به نام و نام خانوادگی
+  </a>
+</section>
+
+<script>
+  (function () {
+    var day = document.getElementById("birthDay");
+    var month = document.getElementById("birthMonth");
+    var year = document.getElementById("birthYear");
+    var box = document.getElementById("signPreview");
+    if (!day || !month || !year || !box) return;
+
+    var nameEl = box.querySelector(".sign-preview__name");
+    var metaEl = box.querySelector(".sign-preview__meta");
+
+    function refresh() {
+      var url = "/api/zodiac?jy=" + year.value + "&jm=" + month.value + "&jd=" + day.value;
+      fetch(url)
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          if (!data.ok) { return; }
+          nameEl.textContent = data.symbol + " " + data.name;
+          metaEl.textContent = data.element + " • " + data.range + " — " + data.motto;
+          box.classList.add("is-live");
+        })
+        .catch(function () { /* بی‌اهمیت: پیش‌نمایش اختیاری است */ });
+    }
+
+    [day, month, year].forEach(function (element) { element.addEventListener("change", refresh); });
+    refresh();
+  })();
+</script>
+{% endblock %}
