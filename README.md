@@ -34,6 +34,33 @@ python -m uvicorn app.main:app --reload --port 8020
 
 ---
 
+## جریان کار گیت
+
+```
+develop  ← تمام تغییرات روزمره (شاخهٔ پیش‌فرضِ کار)
+main     ← فقط نسخه‌های ریلیز؛ تگ نسخه روی همین شاخه
+```
+
+هر تغییر یک کامیت معنادار روی `develop` است (نه کامیت‌های بزرگ و مبهم):
+
+```bash
+git switch develop                     # همیشه روی develop کار کن
+git add <files> && git commit -m "type: چرا این تغییر"
+git push origin develop
+```
+
+برای ریلیز، `develop` روی `main` مرج و همان‌جا تگ می‌شود:
+
+```bash
+git switch main && git merge --no-ff develop
+git tag -a v1.1.0 -m "نشانه ۱٫۱٫۰"
+git switch develop && git push origin main --follow-tags
+```
+
+نسخهٔ جاری در `app/__init__.py` (`__version__`) و در تگ‌ها (`v1.0.0`) هم‌تراز نگه داشته می‌شود.
+
+---
+
 ## پنل مدیریت (روت مخفی)
 
 پنل روی یک مسیر تصادفی است و **هیچ‌جای سایت به آن لینک نشده**. مسیر مخفی، نام کاربری و رمز
