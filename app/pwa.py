@@ -81,23 +81,62 @@ def service_worker_source() -> str:
 #
 # اثر انگشت «راز» نیست؛ داخل خودِ APK منتشر می‌شود. اگر روزی کلید امضا عوض شد،
 # فقط این مقدار را با متغیر محیطی `NESHANE_APP_SHA256` عوض کن.
-APP_PACKAGE = os.environ.get("NESHANE_APP_PACKAGE", "app.neshane").strip()
-APP_SHA256 = os.environ.get(
-    "NESHANE_APP_SHA256",
-    "1B:F2:0E:9A:5B:E3:AD:7B:6A:36:3C:B9:B0:F4:51:11:AC:A5:BD:11:67:66:2D:40:7D:2C:F8:37:0E:0A:84:CA",
-).strip()
+DEFAULT_APP_PACKAGE = "app.neshane"
+DEFAULT_APP_SHA256 = (
+    "1B:F2:0E:9A:5B:E3:AD:7B:6A:36:3C:B9:B0:F4:51:11:AC:A5:BD:11:67:66:2D:40:7D:2C:F8:37:0E:0A:84:CA"
+)
+
+# هر دو مقدار می‌توانند **چندتایی** باشند (با کاما یا فاصلهٔ خط جدید جدا شوند)؛
+# مثلاً وقتی APK را با ابزار وب می‌سازی و کلید امضا با کلید ما فرق دارد،
+# فقط اثر انگشت جدید را به فهرست اضافه کن — نیازی به تغییر کد نیست:
+#
+#   NESHANE_APP_PACKAGE="app.neshane,ir.example.neshane"
+#   NESHANE_APP_SHA256="1B:F2:...,AA:BB:CC:..."
+#
+# برای هر بسته یک statement ساخته می‌شود و همهٔ اثر انگشت‌ها داخل همان statement
+# می‌آیند؛ کلید دیباگ و کلید ریلیز کنار هم بدون مشکل کار می‌کنند.
+
+def _env_list(name: str, default: str) -> list:
+    raw = os.environ.get(name, default).replace(",", "\n")
+    return [item.strip() for item in raw.split("\n") if item.strip()]
+
+
+def normalize_fingerprint(value: str) -> str:
+    """اثر انگشت SHA-256 را به قالب استاندارد کروم درمی‌آورد.
+
+    ابزارهای ساخت APK گاهی اثر انگشت را کوچک یا بدون جداکننده می‌دهند؛
+    کروم فقط قالب `AA:BB:…` با حروف بزرگ را قبول می‌کند.
+    """
+    cleaned = "".join(ch for ch in value.upper() if ch in "0123456789ABCDEF:")
+    cleaned = cleaned.replace(":", "")
+    if len(cleaned) == 64:
+        return ":".join(cleaned[i : i + 2] for i in range(0, 64, 2))
+    # قالب غیرمنتظره: همان ورودی را دست‌نخورده برگردان تا کاربر ببیند و درست کند.
+    return value.strip()
+
+
+def app_packages() -> list:
+    """فهرست نام بسته‌های اندرویدی که اجازهٔ باز کردن تمام‌صفحهٔ این دامنه را دارند."""
+    return _env_list("NESHANE_APP_PACKAGE", DEFAULT_APP_PACKAGE)
+
+
+def app_fingerprints() -> list:
+    """فهرست اثر انگشت‌های SHA-256 گواهی امضای همان بسته‌ها."""
+    return [normalize_fingerprint(item) for item in _env_list("NESHANE_APP_SHA256", DEFAULT_APP_SHA256)]
 
 
 def assetlinks() -> str:
-    """محتوای `/.well-known/assetlinks.json` بر اساس بسته و اثر انگشت امضا."""
+    """محتوای `/.well-known/assetlinks.json` بر اساس بسته‌ها و اثر انگشت‌های امضا."""
+    fingerprints = app_fingerprints()
     statements = [
         {
             "relation": ["delegate_permission/common.handle_all_urls"],
             "target": {
                 "namespace": "android_app",
-                "package_name": APP_PACKAGE,
-                "sha256_cert_fingerprints": [APP_SHA256],
+                "package_name": package,
+                "sha256_cert_fingerprints": fingerprints,
             },
         }
+        for package in app_packages()
     ]
     return json.dumps(statements, ensure_ascii=False)
