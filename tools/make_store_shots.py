@@ -9,6 +9,14 @@
      بدنه، بازتاب شیشه و سایهٔ عمیق — و با تیتر تبلیغاتی روی بوم ۱۰۸۰×۱۹۲۰
      می‌نشاند.
 
+چیدمان بوم دوستونه است و عمداً «بیرون‌زدگی» دارد: گوشی از یک لبهٔ بوم کمی
+بیرون می‌زند و ستون محتوای همان تصویر (نشان گام، سه کارت ویژگی و یک بلوک
+امضای مخصوص همان صفحه) در ستون روبه‌رو می‌آید. ستون‌ها با فاصلهٔ امن از هم
+جدا شده‌اند تا هیچ عنصری روی گوشی نیفتد و هیچ ناحیهٔ خالیِ بزرگی نماند.
+
+هر تصویر تمِ خودش را دارد (رنگ تأکید، بافت پس‌زمینه، زاویهٔ گوشی و ستون
+محتوا) ولی زبان بصری — فونت، کارت‌ها، سایه‌ها و نشان «نشانه» — در همه یکی است.
+
 اجرا:  python tools/make_store_shots.py            (سرور نشانه باید بالا باشد)
 اگر کروم جای دیگری است:  NESHANE_CHROME="مسیر کروم" python tools/make_store_shots.py
 """
@@ -57,13 +65,24 @@ SCREEN_W, SCREEN_H = 390, 844  # اندازهٔ واقعی اپ (CSS px)
 # --- هندسهٔ ماکت گوشی (پیکسل بوم ۱۰۸۰×۱۹۲۰) ------------------------------ #
 PHONE_W = 660
 PHONE_PAD = 13
-PHONE_TOP = 396
+PHONE_TOP = 388
 PHONE_DEPTH = 28                                 # ضخامت بدنه در راستای عمق
 PHONE_RADIUS = 74
 SCREEN_INNER = PHONE_W - 2 * PHONE_PAD           # ۶۳۴
 STATUS_BAR_H = 78
 SHOT_H = round(SCREEN_INNER * 1688 / 780)        # همان نسبت اسکرین‌شات دوبرابر
 PHONE_H = STATUS_BAR_H + SHOT_H + 2 * PHONE_PAD
+
+# --- چیدمان دوستونه ------------------------------------------------------- #
+# گوشی `PHONE_BLEED` از لبهٔ بوم بیرون می‌زند و ستون محتوا در طرف دیگر با
+# فاصلهٔ امن می‌نشیند. با ۶۶۰ پیکسل عرض گوشی و ستون ۳۳۰ پیکسلی، ۶۴ پیکسل
+# فاصلهٔ آزاد می‌ماند؛ چرخش سه‌بعدی حداکثر ~۳۰ پیکسل جابه‌جایی می‌دهد، پس
+# برخوردی پیش نمی‌آید (این را با اندازه‌گیری پیکسلی هم چک می‌کنیم).
+PHONE_BLEED = 30
+RAIL_W = 330
+RAIL_MARGIN = 56
+RAIL_TOP = PHONE_TOP
+RAIL_BOTTOM = 1880
 
 DEMO = {
     "phone": "09120000077",
@@ -85,89 +104,379 @@ INTENTS = {
     "dice": "برای شروعِ کاری که چند وقته در ذهنم است، امروز وقتش هست یا صبر کنم؟",
 }
 
-# (نامک، تیتر، زیرتیتر، آیکون کارت شناور، متن کارت شناور، آیکون نشان گوشه)
-FRAME_COPY: List[Tuple[str, str, str, str, str, str]] = [
-    (
-        "01-start",
-        "فالت را از دلِ نیتِ <em>امروزت</em> بگیر",
-        "اول نیتت را می‌نویسی، بعد نشانه راهش را نشان می‌دهد. هفت روش، یک نیت.",
-        "fa-wand-magic-sparkles",
-        "هفت روش فال",
-        "fa-star",
-    ),
-    (
-        "02-hafez",
-        "فال حافظ، با همهٔ <em>غزل</em> و تفسیر امروزت",
-        "غزل را با کلیدواژه‌های نیتت می‌خوانیم و معنی‌اش را برای خودت می‌گوییم.",
-        "fa-book-open-reader",
-        "تفسیر روی نیت تو",
-        "fa-feather-pointed",
-    ),
-    (
-        "03-tarot",
-        "کارت‌های تاروت <em>واقعاً</em> رو می‌شوند",
-        "سه کارت با نام، جایگاه و راست یا برگشته بودن — هر فال شکل خودش را دارد.",
-        "fa-clone",
-        "سه کارت نمادین",
-        "fa-hand-sparkles",
-    ),
-    (
-        "04-dice",
-        "تاس‌های نمادین، با همان <em>چشم‌ها</em>",
-        "سه تاس واقعی می‌افتند و هر عدد معنی، جهت و تفسیر خودش را دارد.",
-        "fa-dice",
-        "سه تاس و معنی هر عدد",
-        "fa-dice-five",
-    ),
-    (
-        "05-methods",
-        "هفت روش فال، هر کدام با <em>ابزار خودش</em>",
-        "حافظ، تاروت، تاس، رون، عدد، طالع و چینی — از هم قابل تشخیص و متفاوت.",
-        "fa-shapes",
-        "ابزار جدا برای هر فال",
-        "fa-layer-group",
-    ),
-    (
-        "06-intent",
-        "یک جمله از نیتت، <em>تفاوت</em> فال را می‌سازد",
-        "تفسیر روی همان چیزی سوار می‌شود که خودت نوشته‌ای، نه روی یک متن آماده.",
-        "fa-feather-pointed",
-        "تفسیر شخصی‌سازی‌شده",
-        "fa-quote-right",
-    ),
-    (
-        "07-life",
-        "<em>زندگی در عدد</em>؛ نگاهی آماری به خودت",
-        "از ریتم قلب و عددِ غذا تا الگوهای رفتاری — همه از تولدِ خودت حساب می‌شود.",
-        "fa-chart-simple",
-        "بیش از ۵۰ کارت آماری",
-        "fa-infinity",
-    ),
-    (
-        "08-tests",
-        "ده تستِ شخصیت، <em>در یک جا</em>",
-        "MBTI، پنج عامل بزرگ، کهن‌الگوهای یونگ، انیاگرام، DISC، چاکرا و بیشتر.",
-        "fa-brain",
-        "ده آزمون معتبر",
-        "fa-chart-pie",
-    ),
-    (
-        "09-history",
-        "همهٔ خوانش‌ها و نتیجه‌ها، <em>در پروندهٔ تو</em>",
-        "هر فال و هر تست ذخیره می‌شود تا بعداً برگردی، مقایسه کنی و پرونده‌ات را ببینی.",
-        "fa-clock-rotate-left",
-        "تاریخچهٔ کامل",
-        "fa-bookmark",
-    ),
-    (
-        "10-result",
-        "نتیجهٔ دقیق، با <em>نمرهٔ هر مؤلفه</em>",
-        "نمودار محورها، تفسیر پاسخ‌ها و قدمِ بعدی — همه بر اساس جواب‌های خودت.",
-        "fa-chart-column",
-        "نمرهٔ هر مؤلفه",
-        "fa-award",
-    ),
+KICKER = "فال و تست شخصیت، فارسی و راست‌به‌چپ"
+
+# زاویهٔ گوشی: طرفِ بیرون‌زده به بیننده نزدیک‌تر می‌شود تا عمق باورپذیر بماند.
+# (زاویه‌ها ملایم‌اند تا گوشی با احتساب پرسپکتیو داخل بوم بماند و لبه‌اش بریده نشود.)
+TILT_RIGHT = "rotateX(4deg) rotateY(-12deg) rotateZ(-1deg)"     # گوشی به چپ بیرون زده
+TILT_LEFT = "rotateX(4deg) rotateY(11deg) rotateZ(1deg)"        # گوشی به راست بیرون زده
+TILT_RIGHT_SOFT = "rotateX(3deg) rotateY(-8deg) rotateZ(-0.6deg)"
+TILT_LEFT_SOFT = "rotateX(5deg) rotateY(8deg) rotateZ(0.8deg)"
+
+# بلوک «امضا»: هر صفحه یک قطعهٔ بصری مخصوص خودش دارد تا ده تصویر شبیه هم نشوند.
+SIGN_ORBIT = """
+<div class="sign mini">
+<div class="mini__t">یک نیت، هفت مسیر</div>
+<div class="orbit">
+  <span style="width:132px;height:132px;left:calc(50% - 66px);top:calc(50% - 66px)"></span>
+  <span style="width:186px;height:186px;left:calc(50% - 93px);top:calc(50% - 93px);border-color:var(--b-dot)"></span>
+  <span style="width:240px;height:240px;left:calc(50% - 120px);top:calc(50% - 120px);border-color:var(--a-soft)"></span>
+  <img src="/static/icons/icon-192.png" alt="" />
+</div>
+</div>
+"""
+
+SIGN_QUOTE = """
+<div class="sign bubble" style="font-size:20px;line-height:1.85">
+  «دلا بسوز که سوز تو کار‌ها بکند<br />نیاز نیم‌شبی دفعِ صد بلا بکند»
+</div>
+"""
+
+SIGN_TAROT = """
+<div class="sign mini">
+<div class="mini__t">سه کارت، سه معنی</div>
+<div class="fan">
+  <i style="right:0;transform:rotate(-10deg)"></i>
+  <i style="right:74px;bottom:16px"></i>
+  <i style="right:148px;transform:rotate(10deg)"></i>
+</div>
+</div>
+"""
+
+SIGN_DICE = """
+<div class="sign mini">
+<div class="mini__t">تاس‌های امروز</div>
+<div class="dice">
+  <span class="die"><i class="fa-solid fa-dice-three"></i></span>
+  <span class="die"><i class="fa-solid fa-dice-five"></i></span>
+  <span class="die"><i class="fa-solid fa-dice-one"></i></span>
+</div>
+</div>
+"""
+
+SIGN_METHODS = """
+<div class="sign mini">
+<div class="mini__t">یک نیت، هفت روش</div>
+<div class="pills">
+  <span class="pill">حافظ</span><span class="pill">تاروت</span><span class="pill">تاس</span>
+  <span class="pill">رون</span><span class="pill">عدد</span><span class="pill">طالع</span>
+  <span class="pill">چینی</span>
+</div>
+</div>
+"""
+
+SIGN_INTENT = """
+<div class="sign bubble" style="font-size:20px;line-height:1.8">
+  «بین دو انتخاب مانده‌ام؛ کدام راه به حالم بیشتر می‌خورد؟»
+</div>
+"""
+
+SIGN_STATS = """
+<div class="sign mini" style="display:grid;gap:18px">
+  <div class="stat"><b>۵۲+</b><small>کارت آماری در چهار دسته</small></div>
+  <div class="stat"><b>۴</b><small>هویت، زمان، بدن و جهان</small></div>
+</div>
+"""
+
+SIGN_BARS = """
+<div class="sign mini">
+  <div class="mini__t">نمرهٔ مؤلفه‌های تو</div>
+  <div class="brow"><span>درون‌گرا</span><span>۶۲٪</span></div>
+  <div class="bar"><i style="width:62%"></i></div>
+  <div class="brow"><span>شهودی</span><span>۷۴٪</span></div>
+  <div class="bar"><i style="width:74%"></i></div>
+  <div class="brow"><span>احساسی</span><span>۵۸٪</span></div>
+  <div class="bar"><i style="width:58%"></i></div>
+</div>
+"""
+
+SIGN_TIMELINE = """
+<div class="sign mini tl">
+  <div><b></b><span>فال حافظ — امروز</span></div>
+  <div><b></b><span>تاروت سه‌کارتی — دیروز</span></div>
+  <div><b></b><span>تست MBTI — ۳ روز پیش</span></div>
+  <div><b></b><span>زندگی در عدد — هفتهٔ پیش</span></div>
+</div>
+"""
+
+# هر تصویر: نامک، تیتر، زیرتیتر، رنگ تأکید، رنگ دوم، بافت، طرف ستون، سبک
+# ستون، سه کارت ویژگی، گام و برچسب گام، و بلوک امضای همان صفحه.
+FRAME_SPECS: List[Dict[str, object]] = [
+    {
+        "name": "01-start",
+        "tags": ["فال حافظ", "تاروت", "تست شخصیت"],
+        "note": "نسخهٔ ۱٫۰ — همین حالا",
+        "screen": "start",
+        "step": "۰۱",
+        "label": "شروع سفر",
+        "title": "فالت را از دلِ نیتِ <em>امروزت</em> بگیر",
+        "sub": "اول نیتت را می‌نویسی، بعد نشانه راهش را نشان می‌دهد. هفت روش، یک نیت.",
+        "accent": "#6b4fbb",
+        "accent2": "#2f8fa8",
+        "motif": "motif--orbit",
+        "side": "right",
+        "rail": "stack",
+        "tilt": TILT_RIGHT,
+        "chips": [
+            ("fa-wand-magic-sparkles", "هفت روش فال", "حافظ، تاروت، تاس و رون"),
+            ("fa-brain", "ده تست شخصیت", "با فرمول واقعی هر آزمون"),
+            ("fa-clock-rotate-left", "پروندهٔ خوانش‌ها", "همهٔ فال‌ها و نتیجه‌ها"),
+        ],
+        "sign": SIGN_ORBIT,
+    },
+    {
+        "name": "02-hafez",
+        "tags": ["غزل کامل", "تفسیر امروز", "کلیدواژه‌ها"],
+        "note": "متن پایه، همیشه هست",
+        "screen": "hafez",
+        "step": "۰۲",
+        "label": "فال حافظ",
+        "title": "فال حافظ، با همهٔ <em>غزل</em> و تفسیر امروزت",
+        "sub": "غزل را با کلیدواژه‌های نیتت می‌خوانیم و معنی‌اش را برای خودت می‌گوییم.",
+        "accent": "#2f8fa8",
+        "accent2": "#6b4fbb",
+        "motif": "motif--arc",
+        "side": "left",
+        "rail": "timeline",
+        "tilt": TILT_LEFT,
+        "chips": [
+            ("fa-book-open-reader", "غزل کامل", "با تفسیر همین امروز"),
+            ("fa-key", "کلیدواژه‌های نیت", "روی همان جملهٔ تو"),
+            ("fa-feather-pointed", "متن پایه هم هست", "حتی اگر مدل قطع باشد"),
+        ],
+        "sign": SIGN_QUOTE,
+    },
+    {
+        "name": "03-tarot",
+        "tags": ["یک یا سه کارت", "راست و برگشته", "سه کارت"],
+        "note": "کارت‌ها واقعاً رو می‌شوند",
+        "screen": "tarot",
+        "step": "۰۳",
+        "label": "کارت تاروت",
+        "title": "کارت‌های تاروت <em>واقعاً</em> رو می‌شوند",
+        "sub": "سه کارت با نام، جایگاه و راست یا برگشته بودن — هر فال شکل خودش را دارد.",
+        "accent": "#c2456b",
+        "accent2": "#6b4fbb",
+        "motif": "motif--blobs",
+        "side": "right",
+        "rail": "pills",
+        "tilt": TILT_RIGHT_SOFT,
+        "chips": [
+            ("fa-clone", "یک یا سه کارت", "به انتخاب خودت"),
+            ("fa-arrows-rotate", "راست و برگشته", "جایگاه هر کارت مشخص"),
+            ("fa-hand-sparkles", "کارت‌ها رو می‌شوند", "با انیمیشن واقعی"),
+        ],
+        "sign": SIGN_TAROT,
+    },
+    {
+        "name": "04-dice",
+        "tags": ["سه تاس", "چشم‌های واقعی", "جهت هر عدد"],
+        "note": "هر عدد، یک معنی",
+        "screen": "dice",
+        "step": "۰۴",
+        "label": "فال تاس",
+        "title": "تاس‌های نمادین، با همان <em>چشم‌ها</em>",
+        "sub": "سه تاس واقعی می‌افتند و هر عدد معنی، جهت و تفسیر خودش را دارد.",
+        "accent": "#c98a2e",
+        "accent2": "#b1541f",
+        "motif": "motif--grid",
+        "side": "left",
+        "rail": "numbered",
+        "tilt": TILT_LEFT_SOFT,
+        "chips": [
+            ("fa-dice", "سه تاس نمادین", "با چشم‌های واقعی"),
+            ("fa-hashtag", "معنی هر عدد", "جهت و تفسیر خودش"),
+            ("fa-dice-five", "هیچ فالی تکراری نیست", "هر بار از نو"),
+        ],
+        "sign": SIGN_DICE,
+    },
+    {
+        "name": "05-methods",
+        "tags": ["هفت روش", "یک نیت", "ابزار جدا"],
+        "note": "هیچ دو فالی یکسان نیست",
+        "screen": "methods",
+        "step": "۰۵",
+        "label": "روش‌های فال",
+        "title": "هفت روش فال، هر کدام با <em>ابزار خودش</em>",
+        "sub": "حافظ، تاروت، تاس، رون، عدد، طالع و چینی — از هم قابل تشخیص و متفاوت.",
+        "accent": "#4b53c9",
+        "accent2": "#2f8fa8",
+        "motif": "motif--mesh",
+        "side": "right",
+        "rail": "pills",
+        "tilt": TILT_LEFT_SOFT,
+        "chips": [
+            ("fa-book-open-reader", "حافظ و تاروت", "با نیت خودت"),
+            ("fa-dice", "تاس و رون", "با ابزار مخصوصشان"),
+            ("fa-star-and-crescent", "عدد، طالع و چینی", "همه در یک جا"),
+        ],
+        "sign": SIGN_METHODS,
+    },
+    {
+        "name": "06-intent",
+        "tags": ["نیت خودت", "تفسیر شخصی", "حریم خصوصی"],
+        "note": "لینک فال فقط برای تو",
+        "screen": "intent",
+        "step": "۰۶",
+        "label": "نوشتن نیت",
+        "title": "یک جمله از نیتت، <em>تفاوت</em> فال را می‌سازد",
+        "sub": "تفسیر روی همان چیزی سوار می‌شود که خودت نوشته‌ای، نه روی یک متن آماده.",
+        "accent": "#8a4fc9",
+        "accent2": "#c2456b",
+        "motif": "motif--sparkle",
+        "side": "left",
+        "rail": "stack",
+        "tilt": TILT_LEFT,
+        "chips": [
+            ("fa-feather-pointed", "نیت خودت", "یک جملهٔ کوتاه کافی است"),
+            ("fa-wand-magic-sparkles", "تفسیر شخصی", "روی همان جمله"),
+            ("fa-lock", "حریم خصوصی", "لینک فال فقط برای تو"),
+        ],
+        "sign": SIGN_INTENT,
+    },
+    {
+        "name": "07-life",
+        "tags": ["۵۲+ کارت", "چهار دسته", "آمار شخصی"],
+        "note": "همه از تولد خودت",
+        "screen": "life",
+        "step": "۰۷",
+        "label": "زندگی در عدد",
+        "title": "<em>زندگی در عدد</em>؛ نگاهی آماری به خودت",
+        "sub": "از ریتم قلب و عددِ غذا تا الگوهای رفتاری — همه از تولدِ خودت حساب می‌شود.",
+        "accent": "#2f8f6b",
+        "accent2": "#2f8fa8",
+        "motif": "motif--waves",
+        "side": "right",
+        "rail": "numbered",
+        "tilt": TILT_RIGHT_SOFT,
+        "chips": [
+            ("fa-chart-simple", "بیش از ۵۰ کارت", "در چهار دستهٔ جدا"),
+            ("fa-heart-pulse", "هویت و بدن", "از تولد خودت"),
+            ("fa-moon", "زمان و جهان", "فاز ماه و شمارش روزها"),
+        ],
+        "sign": SIGN_STATS,
+    },
+    {
+        "name": "08-tests",
+        "tags": ["MBTI", "پنج عامل بزرگ", "انیاگرام"],
+        "note": "نتیجه با جواب‌های خودت",
+        "screen": "tests",
+        "step": "۰۸",
+        "label": "تست‌های شخصیت",
+        "title": "ده تستِ شخصیت، <em>در یک جا</em>",
+        "sub": "MBTI، پنج عامل بزرگ، کهن‌الگوهای یونگ، انیاگرام، DISC، چاکرا و بیشتر.",
+        "accent": "#2f7fc9",
+        "accent2": "#6b4fbb",
+        "motif": "motif--dots",
+        "side": "left",
+        "rail": "timeline",
+        "tilt": TILT_LEFT_SOFT,
+        "chips": [
+            ("fa-brain", "ده آزمون معتبر", "MBTI، پنج عامل، DISC"),
+            ("fa-compass", "نمرهٔ هر مؤلفه", "با نمودار محورها"),
+            ("fa-chart-pie", "تفسیر و قدم بعدی", "روی جواب‌های خودت"),
+        ],
+        "sign": SIGN_BARS,
+    },
+    {
+        "name": "09-history",
+        "tags": ["تاریخچه", "مقایسه", "خروجی چاپ"],
+        "note": "همه در یک پرونده",
+        "screen": "history",
+        "step": "۰۹",
+        "label": "پروندهٔ خوانش‌ها",
+        "title": "همهٔ خوانش‌ها و نتیجه‌ها، <em>در پروندهٔ تو</em>",
+        "sub": "هر فال و هر تست ذخیره می‌شود تا بعداً برگردی، مقایسه کنی و پرونده‌ات را ببینی.",
+        "accent": "#5b6070",
+        "accent2": "#2f8fa8",
+        "motif": "motif--bars",
+        "side": "right",
+        "rail": "timeline",
+        "tilt": TILT_RIGHT,
+        "chips": [
+            ("fa-bookmark", "همهٔ فال‌ها", "با تاریخ و روش"),
+            ("fa-chart-simple", "نتیجهٔ تست‌ها", "قابل مقایسه با هم"),
+            ("fa-print", "پروندهٔ قابل چاپ", "برای خودت"),
+        ],
+        "sign": SIGN_TIMELINE,
+    },
+    {
+        "name": "10-result",
+        "tags": ["نمرهٔ مؤلفه", "نمودار محور", "قدم بعدی"],
+        "note": "قدم بعدی هم می‌آید",
+        "screen": "result",
+        "step": "۱۰",
+        "label": "نتیجهٔ دقیق",
+        "title": "نتیجهٔ دقیق، با <em>نمرهٔ هر مؤلفه</em>",
+        "sub": "نمودار محورها، تفسیر پاسخ‌ها و قدمِ بعدی — همه بر اساس جواب‌های خودت.",
+        "accent": "#b8860b",
+        "accent2": "#6b4fbb",
+        "motif": "motif--burst",
+        "side": "left",
+        "rail": "numbered",
+        "tilt": TILT_RIGHT,
+        "chips": [
+            ("fa-chart-column", "نمرهٔ هر مؤلفه", "عدد دقیق، نه حدس"),
+            ("fa-award", "تیپ شخصیتی", "با نمودار محورها"),
+            ("fa-route", "قدم بعدی", "پیشنهاد نشانه برای تو"),
+        ],
+        "sign": SIGN_BARS,
+    },
 ]
+
+
+def hex_rgba(value: str, alpha: float) -> str:
+    """رنگ هگز را به rgba با شفافیت دلخواه تبدیل می‌کند."""
+    raw = value.lstrip("#")
+    red, green, blue = (int(raw[index : index + 2], 16) for index in (0, 2, 4))
+    return f"rgba({red}, {green}, {blue}, {alpha})"
+
+
+def frame_style(spec: Dict[str, object]) -> str:
+    """متغیرهای CSS هر تصویر: رنگ‌ها، جای گوشی و زاویه‌اش."""
+    accent = str(spec["accent"])
+    second = str(spec["accent2"])
+    rail_side = str(spec["side"])
+    # گوشی به طرف مقابلِ ستونِ محتوا بیرون می‌زند تا هیچ‌وقت زیر کارت‌ها نرود.
+    phone_left = -PHONE_BLEED if rail_side == "right" else CANVAS_W - PHONE_W + PHONE_BLEED
+    parts = {
+        "--a": accent,
+        "--b": second,
+        "--a-soft": hex_rgba(accent, 0.15),
+        "--a-dot": hex_rgba(accent, 0.26),
+        "--a-glow": hex_rgba(accent, 0.32),
+        "--a-shadow": hex_rgba(accent, 0.40),
+        "--b-soft": hex_rgba(second, 0.26),
+        "--b-dot": hex_rgba(second, 0.24),
+        "--phone-left": f"{phone_left}px",
+        "--phone-tilt": str(spec["tilt"]),
+    }
+    return "; ".join(f"{name}: {value}" for name, value in parts.items())
+
+
+def rail_html(spec: Dict[str, object]) -> str:
+    """ستون محتوای همان تصویر: گام، سه کارت ویژگی و بلوک امضا."""
+    style = str(spec["rail"])
+    side = str(spec["side"])
+    chips = []
+    for index, (icon, label, sub) in enumerate(spec["chips"], start=1):  # type: ignore[misc]
+        if style == "numbered":
+            mark = f'<span class="chip__i">{"۱۲۳۴۵۶۷۸۹۰"[index - 1]}</span>'
+        else:
+            mark = f'<span class="chip__i"><i class="fa-solid {icon}"></i></span>'
+        chips.append(
+            f'<div class="chip">{mark}'
+            f'<span class="chip__t"><b>{label}</b><small>{sub}</small></span></div>'
+        )
+    return (
+        f'<aside class="rail rail--{side} rail--{style}">'
+        f'<div class="rail__step"><b>{spec["step"]}</b><span>{spec["label"]}</span></div>'
+        f'<div class="rail__chips">{"".join(chips)}</div>'
+        f'<div class="rail__note"><b></b>{spec["note"]}</div>'
+        f'{spec["sign"]}'
+        f"</aside>"
+    )
+
 
 # نامک اسکرین → مسیر صفحه در اپ (توکن‌دارها بعداً پر می‌شوند)
 SCREEN_URLS: Dict[str, Optional[str]] = {
@@ -182,21 +491,6 @@ SCREEN_URLS: Dict[str, Optional[str]] = {
     "history": "/readings",
     "result": None,
 }
-
-FRAME_SCREEN = {
-    "01-start": "start",
-    "02-hafez": "hafez",
-    "03-tarot": "tarot",
-    "04-dice": "dice",
-    "05-methods": "methods",
-    "06-intent": "intent",
-    "07-life": "life",
-    "08-tests": "tests",
-    "09-history": "history",
-    "10-result": "result",
-}
-
-KICKER = "فال و تست شخصیت، فارسی و راست‌به‌چپ"
 
 
 # --------------------------------------------------------------------------- #
@@ -456,58 +750,129 @@ FRAME_CSS = """
 @font-face { font-family: "YekanBakh FaNum"; src: url("fonts/YekanBakhFaNum-Bold.woff2") format("woff2"); font-weight: 700; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 1080px; height: 1920px; overflow: hidden; }
+html { width: 1080px; }
 body {
   font-family: "Pinar FD", system-ui, sans-serif; direction: rtl; color: #12131a;
   background: #eeedea; -webkit-font-smoothing: antialiased;
 }
+.num { font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-weight: 700; }
 
-/* ---------------------------------------------------- بوم و پس‌زمینه */
+/* ---------------------------------------------------- بوم و بافت پس‌زمینه
+   هر تصویر یک بافت مخصوص خودش دارد؛ همه کم‌رنگ‌اند تا متن روی‌شان خوانا بماند. */
 .canvas {
   position: relative; width: 1080px; height: 1920px; overflow: hidden;
   background:
-    radial-gradient(880px 640px at 90% -12%, rgba(107, 79, 187, 0.36), transparent 66%),
-    radial-gradient(780px 560px at 2% 106%, rgba(47, 143, 168, 0.34), transparent 68%),
-    radial-gradient(620px 520px at 104% 42%, rgba(47, 143, 168, 0.20), transparent 70%),
-    radial-gradient(720px 560px at 54% 40%, rgba(255, 255, 255, 0.94), transparent 74%),
-    linear-gradient(170deg, #f7f5ff 0%, #efeee9 54%, #e8f3f1 100%);
+    radial-gradient(900px 660px at 88% -8%, var(--a-soft), transparent 66%),
+    radial-gradient(760px 560px at 2% 104%, var(--b-soft), transparent 68%),
+    linear-gradient(170deg, #f8f7ff 0%, #efeee9 52%, #e9f4f2 100%);
 }
-.dots {
-  position: absolute; inset: 0; opacity: 0.62;
-  background-image: radial-gradient(rgba(107, 79, 187, 0.26) 1.6px, transparent 1.6px);
-  background-size: 38px 38px;
-  -webkit-mask-image: radial-gradient(820px 940px at 50% 60%, #000 20%, transparent 78%);
-  mask-image: radial-gradient(820px 940px at 50% 60%, #000 20%, transparent 78%);
+.canvas > * { position: absolute; }
+.motif { inset: 0; pointer-events: none; }
+.motif--dots {
+  background-image: radial-gradient(var(--a-dot) 1.7px, transparent 1.8px);
+  background-size: 40px 40px; opacity: 0.65;
+  -webkit-mask-image: radial-gradient(720px 880px at 46% 56%, #000 18%, transparent 76%);
+  mask-image: radial-gradient(720px 880px at 46% 56%, #000 18%, transparent 76%);
 }
-.rings { position: absolute; width: 1120px; height: 1120px; border-radius: 50%; left: -300px; top: 250px; }
-.rings i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(107, 79, 187, 0.32); }
-.rings i:nth-child(2) { inset: 140px; border-color: rgba(47, 143, 168, 0.30); }
-.rings i:nth-child(3) { inset: 280px; border-color: rgba(107, 79, 187, 0.22); }
+.motif--grid {
+  background-image: linear-gradient(var(--a-dot) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--a-dot) 1px, transparent 1px);
+  background-size: 84px 84px; opacity: 0.5;
+  -webkit-mask-image: linear-gradient(160deg, #000 0%, transparent 62%);
+  mask-image: linear-gradient(160deg, #000 0%, transparent 62%);
+}
+.motif--waves {
+  background-image: repeating-radial-gradient(circle at 8% 102%, transparent 0 92px, var(--a-dot) 92px 95px);
+  opacity: 0.62;
+  -webkit-mask-image: linear-gradient(0deg, #000 6%, transparent 74%);
+  mask-image: linear-gradient(0deg, #000 6%, transparent 74%);
+}
+.motif--orbit {
+  background-image:
+    radial-gradient(760px 760px at 96% 26%, transparent 0 74%, var(--a-dot) 74% 74.6%, transparent 74.6%),
+    radial-gradient(1080px 1080px at 96% 26%, transparent 0 76%, var(--b-dot) 76% 76.4%, transparent 76.4%),
+    radial-gradient(520px 520px at 6% 88%, transparent 0 70%, var(--a-dot) 70% 70.8%, transparent 70.8%);
+  opacity: 0.9;
+}
+.motif--burst {
+  background-image: repeating-conic-gradient(from 0deg at 84% -6%, var(--a-dot) 0 3deg, transparent 3deg 11deg);
+  opacity: 0.45;
+  -webkit-mask-image: radial-gradient(780px 720px at 84% -6%, #000 4%, transparent 72%);
+  mask-image: radial-gradient(780px 720px at 84% -6%, #000 4%, transparent 72%);
+}
+.motif--mesh {
+  background-image:
+    repeating-linear-gradient(48deg, var(--a-dot) 0 1.5px, transparent 1.5px 62px),
+    repeating-linear-gradient(-48deg, var(--b-dot) 0 1.5px, transparent 1.5px 62px);
+  opacity: 0.45;
+  -webkit-mask-image: linear-gradient(200deg, #000 0%, transparent 58%);
+  mask-image: linear-gradient(200deg, #000 0%, transparent 58%);
+}
+.motif--blobs {
+  background-image:
+    radial-gradient(520px 460px at 6% 12%, var(--a-soft), transparent 70%),
+    radial-gradient(620px 520px at 98% 62%, var(--b-soft), transparent 72%),
+    radial-gradient(460px 420px at 30% 96%, var(--a-soft), transparent 70%);
+}
+.motif--sparkle {
+  background-image:
+    radial-gradient(var(--a-dot) 3px, transparent 3.4px),
+    radial-gradient(var(--b-dot) 2.4px, transparent 2.8px);
+  background-size: 220px 220px, 140px 140px;
+  background-position: 40px 60px, 90px 130px;
+  opacity: 0.8;
+}
+.motif--bars {
+  background-image: repeating-linear-gradient(90deg, transparent 0 54px, var(--a-dot) 54px 60px);
+  opacity: 0.5;
+  -webkit-mask-image: linear-gradient(0deg, #000 4%, transparent 66%);
+  mask-image: linear-gradient(0deg, #000 4%, transparent 66%);
+}
+.motif--arc {
+  background-image:
+    radial-gradient(880px 880px at 12% 104%, transparent 0 76%, var(--a-dot) 76% 76.5%, transparent 76.5%),
+    radial-gradient(1240px 1240px at 12% 104%, transparent 0 78%, var(--b-dot) 78% 78.4%, transparent 78.4%);
+  opacity: 0.9;
+}
 
-/* ---------------------------------------------------- سرصفحه و متن */
-.brand { position: absolute; top: 64px; inset-inline-start: 84px; display: flex; align-items: center; gap: 18px; }
-.brand img { width: 70px; height: 70px; border-radius: 21px; box-shadow: 0 16px 32px rgba(58, 42, 110, 0.30); }
-.brand b { font-size: 38px; font-weight: 700; letter-spacing: -0.4px; }
-.head { position: absolute; top: 154px; inset-inline: 84px; }
-.head h1 { font-size: 55px; font-weight: 700; line-height: 1.42; letter-spacing: -1.3px; }
-.head h1 em { font-style: normal; color: #6b4fbb; }
-.head p { margin-top: 16px; font-size: 26px; line-height: 1.8; color: #5b6070; }
+/* ---------------------------------------------------- سرصفحه و Tیتر */
+.brand { top: 52px; right: 86px; display: flex; align-items: center; gap: 16px; z-index: 6; }
+.brand__logo {
+  width: 66px; height: 66px; border-radius: 20px; overflow: hidden; display: block;
+  box-shadow: 0 14px 30px rgba(58, 42, 110, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+.brand img { width: 100%; height: 100%; display: block; border-radius: inherit; }
+.brand b { font-size: 37px; font-weight: 700; letter-spacing: -0.4px; }
+.kicker {
+  top: 64px; left: 86px; max-width: 600px; font-size: 21px; color: #565c6d;
+  background: rgba(255, 255, 255, 0.82); border: 1px solid var(--a-soft);
+  border-radius: 999px; padding: 10px 20px;
+}
+.head { top: 140px; right: 86px; left: 86px; z-index: 6; }
+.head h1 { font-size: 52px; font-weight: 700; line-height: 1.42; letter-spacing: -1.2px; max-width: 920px; }
+.head h1 em { font-style: normal; color: var(--a); }
+.head p { margin-top: 14px; font-size: 24px; line-height: 1.78; color: #5b6070; max-width: 880px; }
+.tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.tag {
+  display: inline-flex; align-items: center; padding: 9px 16px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86); border: 1px solid var(--a-soft);
+  font-size: 19px; color: #4a4f60; box-shadow: 0 10px 20px rgba(24, 20, 46, 0.08);
+}
 
 /* ---------------------------------------------------- صحنهٔ سه‌بعدی */
-.stage { position: absolute; inset: 0; perspective: 2100px; perspective-origin: 50% 46%; }
-
-/* هالهٔ نرم پشت گوشی: قاب را از پس‌زمینه جدا می‌کند و عمق می‌سازد */
+.stage { inset: 0; perspective: 2400px; perspective-origin: 50% 40%; }
+/* هالهٔ نرم پشت گوشی: قاب را از پس‌زمینه جدا می‌کند و عمق می‌سازد. */
 .glow {
-  position: absolute; top: 560px; left: 50%; margin-left: -440px;
-  width: 880px; height: 820px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(107, 79, 187, 0.30), rgba(47, 143, 168, 0.14) 58%, transparent 76%);
-  filter: blur(30px);
+  top: 620px; left: calc(var(--phone-left) + (var(--phone-w) - 940px) / 2);
+  width: 940px; height: 940px; border-radius: 50%; z-index: 1;
+  background: radial-gradient(closest-side, var(--a-glow), transparent 76%);
+  filter: blur(34px);
 }
-/* سایهٔ تماس روی «زمین»: گوشی را به کادر می‌چسباند */
+/* سایهٔ تماس روی «زمین»: گوشی را به کادر می‌چسباند. */
 .ground {
-  position: absolute; left: 50%; margin-left: -320px; top: 1778px;
-  width: 640px; height: 88px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(38, 28, 76, 0.38), rgba(38, 28, 76, 0.14) 56%, transparent 78%);
+  top: 1806px; left: calc(var(--phone-left) + (var(--phone-w) - 700px) / 2);
+  width: 700px; height: 92px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(closest-side, rgba(38, 28, 76, 0.42), rgba(38, 28, 76, 0.14) 56%, transparent 78%);
   filter: blur(18px);
 }
 
@@ -516,10 +881,9 @@ body {
    عمق. با preserve-3d خودِ مرورگر عمق را می‌سازد، پس ضخامت گوشی واقعی است و
    لازم نیست چرخش را دستی جبران کنیم. */
 .box {
-  position: absolute; inset-inline: 0; margin-inline: auto; top: var(--phone-top);
+  position: absolute; left: var(--phone-left); top: var(--phone-top);
   width: var(--phone-w); height: var(--phone-h);
-  transform-style: preserve-3d;
-  transform: translateX(-10px) rotateX(5deg) rotateY(-13deg) rotateZ(-1.5deg);
+  transform-style: preserve-3d; transform: var(--phone-tilt); z-index: 3;
 }
 .face { position: absolute; inset: 0; border-radius: var(--phone-r); }
 .face--back {
@@ -576,55 +940,123 @@ body {
   background: linear-gradient(114deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.08) 17%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 74%, rgba(255, 255, 255, 0.17) 100%);
 }
 
-/* کارت‌های شناور: عمق را باورپذیر می‌کنند. جای هر دو طوری انتخاب شده که
-   از کنارِ گوشی بیرون بزنند، نه روی محتوای صفحهٔ اپ. */
-.float {
-  position: absolute; display: flex; align-items: center; gap: 15px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.94);
-  box-shadow: 0 28px 56px rgba(22, 18, 44, 0.24);
+/* ---------------------------------------------------- ستون محتوای هر تصویر
+   ستون در طرف مخالفِ گوشی می‌نشیند، پس هیچ کارتی روی صفحهٔ اپ نمی‌افتد.
+   سه گروه با space-between پخش می‌شوند تا ستون هم خالی نماند. */
+.rail {
+  top: var(--rail-top); bottom: 40px; width: var(--rail-w);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 18px; z-index: 5;
 }
-.float--card {
-  top: 1688px; inset-inline-start: 56px; width: 372px; padding: 22px 28px;
-  transform: translateZ(120px) rotateZ(3deg);
+.rail--right { right: var(--rail-margin); }
+.rail--left { left: var(--rail-margin); }
+/* رگهٔ نازک در سمتِ روبه‌روی گوشی: ستون را یکپارچه نشان می‌دهد و فاصلهٔ
+   بین بلوک‌ها خالی به نظر نمی‌رسد. */
+.rail::before {
+  content: ""; position: absolute; top: 4px; bottom: 60px; width: 3px; border-radius: 3px;
+  background: linear-gradient(var(--a-soft), var(--b-soft) 60%, transparent);
 }
-.float--badge {
-  top: 430px; inset-inline-end: 150px; width: 112px; height: 112px; padding: 0;
-  justify-content: center; border-radius: 34px; transform: translateZ(96px) rotateZ(-7deg);
-  background: linear-gradient(150deg, #7b5ecb, #5b3fa6); color: #fff; border: 0;
-  box-shadow: 0 24px 46px rgba(64, 44, 130, 0.40);
+.rail--right::before { left: -26px; }
+.rail--left::before { right: -26px; }
+.rail__note {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 10px;
+  font-size: 19px; color: #5b6070; background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--a-soft); border-radius: 999px; padding: 10px 18px;
 }
-.float__icon {
-  flex: none; width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center;
-  background: rgba(107, 79, 187, 0.12); color: #6b4fbb; font-size: 24px;
+.rail__note b { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--a); }
+.rail__step { display: flex; align-items: center; gap: 14px; }
+.rail__step b {
+  width: 78px; height: 78px; border-radius: 25px; background: var(--a); color: #fff;
+  font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-size: 34px; font-weight: 700;
+  display: grid; place-items: center; box-shadow: 0 18px 34px var(--a-shadow);
 }
-.float--badge i { font-size: 41px; }
-.float__text { display: grid; gap: 3px; }
-.float__text b { font-size: 25px; font-weight: 700; letter-spacing: -0.3px; }
-.float__text small { font-size: 19px; color: #6f7482; }
+.rail__step span { font-size: 26px; font-weight: 700; color: #3b3653; }
+.rail__chips { display: grid; gap: 16px; }
 
-/* ---------------------------------------------------- هندسه و سرصفحه
+.chip {
+  display: flex; align-items: center; gap: 16px; padding: 19px 22px; border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+}
+.chip__i {
+  flex: none; width: 56px; height: 56px; border-radius: 19px; display: grid; place-items: center;
+  background: var(--a-soft); color: var(--a); font-size: 25px;
+}
+.chip__t { display: grid; gap: 3px; }
+.chip__t b { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+.chip__t small { font-size: 18px; color: #6f7482; }
+
+/* سبک ستون: خط زمانی، شماره‌دار، قرص‌های جمع‌وجمع */
+.rail--timeline .rail__chips { position: relative; padding-right: 26px; }
+.rail--timeline .rail__chips::before {
+  content: ""; position: absolute; right: 6px; top: 18px; bottom: 18px; width: 2px;
+  background: linear-gradient(var(--a-dot), var(--b-dot));
+}
+.rail--timeline .chip { position: relative; }
+.rail--timeline .chip::before {
+  content: ""; position: absolute; right: -26px; top: 50%; margin-top: -7px;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--a);
+  box-shadow: 0 0 0 5px var(--a-soft);
+}
+.rail--numbered .chip__i {
+  background: var(--a); color: #fff; font-family: "YekanBakh FaNum", "Pinar FD", sans-serif;
+  font-size: 26px; font-weight: 700;
+}
+.rail--pills .chip { padding: 12px 18px; border-radius: 999px; }
+.rail--pills .chip__i { width: 44px; height: 44px; border-radius: 50%; font-size: 20px; }
+.rail--pills .chip__t b { font-size: 22px; }
+
+/* ---------------------------------------------------- بلوک‌های امضا */
+.sign { width: 100%; }
+.mini {
+  border-radius: 26px; background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.96); box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+  padding: 20px 22px;
+}
+.mini__t { font-size: 19px; color: #6f7482; margin-bottom: 14px; }
+.brow { display: flex; justify-content: space-between; font-size: 20px; margin-bottom: 7px; }
+.bar { height: 12px; border-radius: 999px; background: var(--a-soft); overflow: hidden; margin-bottom: 14px; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--a), var(--b)); }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.pill {
+  display: inline-flex; align-items: center; padding: 9px 17px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94); font-size: 19px; color: #3b3653;
+  box-shadow: 0 12px 24px rgba(24, 20, 46, 0.12);
+}
+.fan { position: relative; height: 154px; }
+.fan i {
+  position: absolute; bottom: 0; width: 82px; height: 128px; border-radius: 14px;
+  background: linear-gradient(160deg, var(--a), var(--b));
+  box-shadow: 0 16px 30px rgba(24, 20, 46, 0.22), inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+.dice { display: flex; gap: 12px; }
+.die {
+  width: 78px; height: 78px; border-radius: 20px; background: #fff; display: grid; place-items: center;
+  color: var(--a); font-size: 34px;
+  box-shadow: 0 16px 30px rgba(24, 20, 46, 0.18), inset 0 0 0 1px var(--a-soft);
+}
+.bubble {
+  position: relative; background: rgba(255, 255, 255, 0.96); border-radius: 26px;
+  padding: 20px 22px; box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+}
+.bubble::after {
+  content: ""; position: absolute; bottom: -14px; right: 44px; width: 0; height: 0;
+  border-left: 16px solid transparent; border-right: 16px solid transparent;
+  border-top: 16px solid rgba(255, 255, 255, 0.96);
+}
+.tl { display: grid; gap: 16px; }
+.tl div { display: flex; align-items: center; gap: 12px; font-size: 20px; }
+.tl div b { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--a); box-shadow: 0 0 0 4px var(--a-soft); }
+.stat { display: grid; gap: 4px; }
+.stat b { font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-size: 54px; font-weight: 700; color: var(--a); line-height: 1.1; }
+.stat small { font-size: 19px; color: #6f7482; }
+.orbit { position: relative; height: 268px; display: grid; place-items: center; }
+.orbit span { position: absolute; border-radius: 50%; border: 2px solid var(--a-dot); }
+.orbit img { width: 72px; height: 72px; border-radius: 22px; box-shadow: 0 14px 30px rgba(58, 42, 110, 0.3); }
+
+/* ---------------------------------------------------- هندسه
    اندازه‌های ماکت از پایتون تزریق می‌شود تا یک منبعِ حقیقت بماند. */
 :root {
 {{GEOMETRY}}}
-/* نشان و شعار دو عنصر جدا هستند تا هیچ‌وقت روی هم نیفتند. */
-.brand { position: absolute; top: 54px; inset-inline-start: 86px; display: flex; align-items: center; gap: 16px; }
-.brand__logo {
-  width: 66px; height: 66px; border-radius: 20px; overflow: hidden; display: block;
-  box-shadow: 0 14px 30px rgba(58, 42, 110, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-}
-.brand img { width: 100%; height: 100%; border-radius: inherit; box-shadow: none; }
-.brand b { font-size: 37px; font-weight: 700; letter-spacing: -0.4px; }
-.kicker {
-  position: absolute; top: 66px; inset-inline-end: 86px; max-width: 600px;
-  font-size: 21px; color: #565c6d; background: rgba(255, 255, 255, 0.80);
-  border: 1px solid rgba(107, 79, 187, 0.16); border-radius: 999px; padding: 10px 20px;
-  box-shadow: 0 10px 22px rgba(58, 42, 110, 0.10);
-}
-.head { position: absolute; top: 128px; inset-inline: 86px; }
-.head h1 { font-size: 52px; font-weight: 700; line-height: 1.42; letter-spacing: -1.2px; }
-.head h1 em { font-style: normal; color: #6b4fbb; }
-.head p { margin-top: 16px; font-size: 24px; line-height: 1.78; color: #5b6070; max-width: 900px; }
 """
 
 FRAME_HTML = """<!doctype html>
@@ -636,7 +1068,7 @@ FRAME_HTML = """<!doctype html>
 <style>{css}</style>
 </head>
 <body>
-<div class="canvas" id="canvas"></div>
+<div id="canvas"></div>
 <script>
 var FRAMES = {frames};
 var params = new URLSearchParams(location.search);
@@ -649,35 +1081,33 @@ var BATTERY = '<svg width="34" height="17" viewBox="0 0 34 17"><rect x="0.8" y="
 
 var host = document.getElementById("canvas");
 host.innerHTML = items.map(function (f) {{
-  var title = f.title;
-  var alt = title.replace(/<[^>]+>/g, "");
-  return '' +
-  '<span class="dots"></span><span class="rings"><i></i><i></i><i></i></span>' +
-  '<section class="brand"><span class="brand__logo"><img src="/static/icons/icon-192.png" alt="نشانه" /></span><b>نشانه</b></section>' +
-  '<span class="kicker">' + (f.kicker || "") + '</span>' +
-  '<div class="head"><h1>' + title + '</h1><p>' + f.sub + '</p></div>' +
-  '<div class="stage">' +
-    '<span class="glow"></span>' +
-    '<span class="ground"></span>' +
-    '<div class="box">' +
-      '<span class="edge edge--left"></span><span class="edge edge--right"></span>' +
-      '<span class="key key--v1"></span><span class="key key--v2"></span><span class="key key--power"></span>' +
-      '<span class="face face--back"></span>' +
-      '<div class="face face--front">' +
-        '<div class="screen">' +
-          '<span class="island"></span>' +
-          '<div class="statusbar"><span class="time">' + (f.time || "۹:۴۱") + '</span>' +
-            '<span class="icons">' + SIGNAL + WIFI + BATTERY + '</span></div>' +
-          '<div class="shot"><img src="shots/' + f.screen + '.png" alt="' + alt + '" /></div>' +
-          '<span class="glare"></span>' +
+  return '<section class="canvas" style="' + f.style + '">' +
+    '<span class="motif ' + f.motif + '"></span>' +
+    '<section class="brand"><span class="brand__logo"><img src="/static/icons/icon-192.png" alt="نشانه" /></span><b>نشانه</b></section>' +
+    '<span class="kicker">' + f.kicker + '</span>' +
+    '<div class="head"><h1>' + f.title + '</h1><p>' + f.sub + '</p>' +
+      '<div class="tags">' + f.tags + '</div>' +
+    '</div>' +
+    '<div class="stage">' +
+      '<span class="glow"></span><span class="ground"></span>' +
+      '<div class="box">' +
+        '<span class="edge edge--left"></span><span class="edge edge--right"></span>' +
+        '<span class="key key--v1"></span><span class="key key--v2"></span><span class="key key--power"></span>' +
+        '<span class="face face--back"></span>' +
+        '<div class="face face--front">' +
+          '<div class="screen">' +
+            '<span class="island"></span>' +
+            '<div class="statusbar"><span class="time">' + (f.time || "۹:۴۱") + '</span>' +
+              '<span class="icons">' + SIGNAL + WIFI + BATTERY + '</span></div>' +
+            '<div class="shot"><img src="shots/' + f.screen + '.png" alt="" /></div>' +
+            '<span class="glare"></span>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="float float--card"><span class="float__icon"><i class="fa-solid ' + f.floatIcon + '"></i></span>' +
-      '<span class="float__text"><b>' + f.floatText + '</b><small>در اپ نشانه</small></span></div>' +
-    '<div class="float float--badge"><i class="fa-solid ' + f.badgeIcon + '"></i></div>' +
-  '</div>';
-}}).join('');
+    f.deco +
+  '</section>';
+}}).join("");
 </script>
 </body>
 </html>
@@ -685,20 +1115,20 @@ host.innerHTML = items.map(function (f) {{
 
 
 def write_frames() -> None:
-    frames = []
-    for name, title, sub, float_icon, float_text, badge_icon in FRAME_COPY:
-        frames.append(
-            {
-                "title": title,
-                "sub": sub,
-                "screen": FRAME_SCREEN[name],
-                "kicker": KICKER,
-                "floatIcon": float_icon,
-                "floatText": float_text,
-                "badgeIcon": badge_icon,
-                "time": "۹:۴۱",
-            }
-        )
+    frames = [
+        {
+            "screen": spec["screen"],
+            "kicker": KICKER,
+            "motif": spec["motif"],
+            "style": frame_style(spec),
+            "title": spec["title"],
+            "sub": spec["sub"],
+            "tags": "".join(f'<span class="tag">{tag}</span>' for tag in spec["tags"]),
+            "deco": rail_html(spec),
+            "time": "۹:۴۱",
+        }
+        for spec in FRAME_SPECS
+    ]
     geometry = "".join(
         f"  {name}: {value}px;\n"
         for name, value in (
@@ -712,6 +1142,9 @@ def write_frames() -> None:
             ("--shot-h", SHOT_H),
             ("--screen-inner", SCREEN_INNER),
             ("--screen-r", PHONE_RADIUS - PHONE_PAD),
+            ("--rail-w", RAIL_W),
+            ("--rail-margin", RAIL_MARGIN),
+            ("--rail-top", RAIL_TOP),
         )
     )
     css = FRAME_CSS.replace("{{GEOMETRY}}", geometry)
@@ -770,9 +1203,9 @@ def main() -> int:
 
         write_frames()
         print("== ساخت بوم‌های تبلیغاتی (سه‌بعدی) ==")
-        for index, (name, _title, _sub, _fi, _ft, _bi) in enumerate(FRAME_COPY, start=1):
+        for index, spec in enumerate(FRAME_SPECS, start=1):
             url = f"http://127.0.0.1:{port}/marketing/frames.html?i={index}"
-            out = FRAMES / f"{name}.png"
+            out = FRAMES / f"{spec['name']}.png"
             shoot(chrome, url, out, CANVAS_W, CANVAS_H, 1)
             print(f"  √ {out.relative_to(ROOT)}")
     finally:
