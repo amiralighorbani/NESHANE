@@ -23,20 +23,12 @@ data/ads_media/
 # خروجی موقت اسکریپت تصاویر فروشگاهی
 marketing/shots/html/
 
-# --- اندروید -----------------------------------------------------------------
-# کلید امضای APK هرگز نباید در مخزن بیاید؛ اگر لو برود، هر کسی می‌تواند اپی
-# جعلی با نام «نشانه» امضا کند. در CI از Secretها بازسازی می‌شود.
-android/keystore.properties
-android/*.p12
-android/*.jks
-android/*.keystore
-
-# خروجی و حافظهٔ ساخت
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-android/.android-sdk/
+# کلید امضای اپ موبایل هرگز نباید در مخزن بیاید؛ اگر لو برود، هر کسی می‌تواند
+# اپی جعلی با نام «نشانه» امضا کند.
+*.p12
+*.jks
+*.keystore
+keystore.properties
 
 # ابزار موقت محلی (نصب داخل پروژه)
 .tools/
