@@ -35,6 +35,7 @@ import socketserver
 import subprocess
 import sys
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -1174,13 +1175,59 @@ def copy_fonts() -> None:
 
 
 # --------------------------------------------------------------------------- #
-def main() -> int:
-    parser = argparse.ArgumentParser(description="ساخت تصاویر فروشگاهی نشانه")
-    parser.add_argument("--base", default="http://127.0.0.1:8020", help="آدرس سرور نشانه")
-    parser.add_argument("--keep-html", action="store_true", help="HTML های گرفته‌شده پاک نشوند")
-    args = parser.parse_args()
-    st.BASE = args.base.rstrip("/")
+# بالا آوردن و بستن سرور نشانه (فقط برای حالت `--serve`)
+# --------------------------------------------------------------------------- #
+def app_server_health(base: str) -> bool:
+    """آیا سرور نشانه همین حالا جواب می‌دهد؟"""
+    try:
+        with urllib.request.urlopen(f"{base}/health", timeout=3) as response:
+            return response.status == 200
+    except Exception:  # noqa: BLE001
+        return False
 
+
+def start_app_server(port: int, base: str) -> Optional[subprocess.Popen]:
+    """اگر سروری بالا نیست، خودش بالا می‌آوردش.
+
+    اگر سرور از قبل روی همان پورت جواب بدهد، دست به آن نمی‌زنیم و `None`
+    برمی‌گردانیم؛ در این حالت در پایان هم چیزی بسته نمی‌شود.
+    """
+    if app_server_health(base):
+        print(f"  √ سرور نشانه از قبل روی {base} بالا است")
+        return None
+    print(f"  == بالا آوردن سرور نشانه روی پورت {port} ...")
+    process = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(port)],
+        cwd=str(ROOT),
+    )
+    for _ in range(60):
+        if app_server_health(base):
+            print("  √ سرور آماده است")
+            return process
+        if process.poll() is not None:
+            raise SystemExit(
+                f"سرور نشانه بالا نیامد (کد {process.returncode}).\n"
+                f"اگر پورت {port} دست برنامهٔ دیگری است، با --port پورت دیگری بده."
+            )
+        time.sleep(1)
+    process.terminate()
+    raise SystemExit(f"سرور نشانه در ۶۰ ثانیه روی پورت {port} جواب نداد.")
+
+
+def stop_app_server(process: Optional[subprocess.Popen]) -> None:
+    """فقط سروری را می‌بندد که خودمان بالا آورده‌ایم."""
+    if process is None:
+        return
+    print("  == بستن سرور نشانه ...")
+    process.terminate()
+    try:
+        process.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        process.kill()
+
+
+# --------------------------------------------------------------------------- #
+def build_frames(keep_html: bool = False) -> int:
     chrome = find_chrome()
     FRAMES.mkdir(parents=True, exist_ok=True)
     SHOTS.mkdir(parents=True, exist_ok=True)
@@ -1211,7 +1258,7 @@ def main() -> int:
     finally:
         server.shutdown()
 
-    if not args.keep_html:
+    if not keep_html:
         shutil.rmtree(SHOTS_HTML, ignore_errors=True)
 
     print("")
@@ -1219,6 +1266,30 @@ def main() -> int:
     print(f"  تصاویر نهایی: {FRAMES}")
     print(f"  متن فروشگاه:  {MARKETING / 'store-listing.md'}")
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="ساخت تصاویر فروشگاهی نشانه")
+    parser.add_argument("--base", default="", help="آدرس سرور نشانه (پیش‌فرض http://127.0.0.1:8020)")
+    parser.add_argument("--port", type=int, default=8020, help="پورت سرور نشانه")
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="اگر سرور بالا نیست، خودش بالا بیاوردش و آخر ببندد",
+    )
+    parser.add_argument("--keep-html", action="store_true", help="HTML های گرفته‌شده پاک نشوند")
+    args = parser.parse_args()
+
+    base = (args.base or f"http://127.0.0.1:{args.port}").rstrip("/")
+    st.BASE = base
+
+    app_server = None
+    try:
+        if args.serve:
+            app_server = start_app_server(args.port, base)
+        return build_frames(args.keep_html)
+    finally:
+        stop_app_server(app_server)
 
 
 if __name__ == "__main__":
