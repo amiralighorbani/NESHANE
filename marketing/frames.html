@@ -11,58 +11,129 @@
 @font-face { font-family: "YekanBakh FaNum"; src: url("fonts/YekanBakhFaNum-Bold.woff2") format("woff2"); font-weight: 700; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 1080px; height: 1920px; overflow: hidden; }
+html { width: 1080px; }
 body {
   font-family: "Pinar FD", system-ui, sans-serif; direction: rtl; color: #12131a;
   background: #eeedea; -webkit-font-smoothing: antialiased;
 }
+.num { font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-weight: 700; }
 
-/* ---------------------------------------------------- بوم و پس‌زمینه */
+/* ---------------------------------------------------- بوم و بافت پس‌زمینه
+   هر تصویر یک بافت مخصوص خودش دارد؛ همه کم‌رنگ‌اند تا متن روی‌شان خوانا بماند. */
 .canvas {
   position: relative; width: 1080px; height: 1920px; overflow: hidden;
   background:
-    radial-gradient(880px 640px at 90% -12%, rgba(107, 79, 187, 0.36), transparent 66%),
-    radial-gradient(780px 560px at 2% 106%, rgba(47, 143, 168, 0.34), transparent 68%),
-    radial-gradient(620px 520px at 104% 42%, rgba(47, 143, 168, 0.20), transparent 70%),
-    radial-gradient(720px 560px at 54% 40%, rgba(255, 255, 255, 0.94), transparent 74%),
-    linear-gradient(170deg, #f7f5ff 0%, #efeee9 54%, #e8f3f1 100%);
+    radial-gradient(900px 660px at 88% -8%, var(--a-soft), transparent 66%),
+    radial-gradient(760px 560px at 2% 104%, var(--b-soft), transparent 68%),
+    linear-gradient(170deg, #f8f7ff 0%, #efeee9 52%, #e9f4f2 100%);
 }
-.dots {
-  position: absolute; inset: 0; opacity: 0.62;
-  background-image: radial-gradient(rgba(107, 79, 187, 0.26) 1.6px, transparent 1.6px);
-  background-size: 38px 38px;
-  -webkit-mask-image: radial-gradient(820px 940px at 50% 60%, #000 20%, transparent 78%);
-  mask-image: radial-gradient(820px 940px at 50% 60%, #000 20%, transparent 78%);
+.canvas > * { position: absolute; }
+.motif { inset: 0; pointer-events: none; }
+.motif--dots {
+  background-image: radial-gradient(var(--a-dot) 1.7px, transparent 1.8px);
+  background-size: 40px 40px; opacity: 0.65;
+  -webkit-mask-image: radial-gradient(720px 880px at 46% 56%, #000 18%, transparent 76%);
+  mask-image: radial-gradient(720px 880px at 46% 56%, #000 18%, transparent 76%);
 }
-.rings { position: absolute; width: 1120px; height: 1120px; border-radius: 50%; left: -300px; top: 250px; }
-.rings i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(107, 79, 187, 0.32); }
-.rings i:nth-child(2) { inset: 140px; border-color: rgba(47, 143, 168, 0.30); }
-.rings i:nth-child(3) { inset: 280px; border-color: rgba(107, 79, 187, 0.22); }
+.motif--grid {
+  background-image: linear-gradient(var(--a-dot) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--a-dot) 1px, transparent 1px);
+  background-size: 84px 84px; opacity: 0.5;
+  -webkit-mask-image: linear-gradient(160deg, #000 0%, transparent 62%);
+  mask-image: linear-gradient(160deg, #000 0%, transparent 62%);
+}
+.motif--waves {
+  background-image: repeating-radial-gradient(circle at 8% 102%, transparent 0 92px, var(--a-dot) 92px 95px);
+  opacity: 0.62;
+  -webkit-mask-image: linear-gradient(0deg, #000 6%, transparent 74%);
+  mask-image: linear-gradient(0deg, #000 6%, transparent 74%);
+}
+.motif--orbit {
+  background-image:
+    radial-gradient(760px 760px at 96% 26%, transparent 0 74%, var(--a-dot) 74% 74.6%, transparent 74.6%),
+    radial-gradient(1080px 1080px at 96% 26%, transparent 0 76%, var(--b-dot) 76% 76.4%, transparent 76.4%),
+    radial-gradient(520px 520px at 6% 88%, transparent 0 70%, var(--a-dot) 70% 70.8%, transparent 70.8%);
+  opacity: 0.9;
+}
+.motif--burst {
+  background-image: repeating-conic-gradient(from 0deg at 84% -6%, var(--a-dot) 0 3deg, transparent 3deg 11deg);
+  opacity: 0.45;
+  -webkit-mask-image: radial-gradient(780px 720px at 84% -6%, #000 4%, transparent 72%);
+  mask-image: radial-gradient(780px 720px at 84% -6%, #000 4%, transparent 72%);
+}
+.motif--mesh {
+  background-image:
+    repeating-linear-gradient(48deg, var(--a-dot) 0 1.5px, transparent 1.5px 62px),
+    repeating-linear-gradient(-48deg, var(--b-dot) 0 1.5px, transparent 1.5px 62px);
+  opacity: 0.45;
+  -webkit-mask-image: linear-gradient(200deg, #000 0%, transparent 58%);
+  mask-image: linear-gradient(200deg, #000 0%, transparent 58%);
+}
+.motif--blobs {
+  background-image:
+    radial-gradient(520px 460px at 6% 12%, var(--a-soft), transparent 70%),
+    radial-gradient(620px 520px at 98% 62%, var(--b-soft), transparent 72%),
+    radial-gradient(460px 420px at 30% 96%, var(--a-soft), transparent 70%);
+}
+.motif--sparkle {
+  background-image:
+    radial-gradient(var(--a-dot) 3px, transparent 3.4px),
+    radial-gradient(var(--b-dot) 2.4px, transparent 2.8px);
+  background-size: 220px 220px, 140px 140px;
+  background-position: 40px 60px, 90px 130px;
+  opacity: 0.8;
+}
+.motif--bars {
+  background-image: repeating-linear-gradient(90deg, transparent 0 54px, var(--a-dot) 54px 60px);
+  opacity: 0.5;
+  -webkit-mask-image: linear-gradient(0deg, #000 4%, transparent 66%);
+  mask-image: linear-gradient(0deg, #000 4%, transparent 66%);
+}
+.motif--arc {
+  background-image:
+    radial-gradient(880px 880px at 12% 104%, transparent 0 76%, var(--a-dot) 76% 76.5%, transparent 76.5%),
+    radial-gradient(1240px 1240px at 12% 104%, transparent 0 78%, var(--b-dot) 78% 78.4%, transparent 78.4%);
+  opacity: 0.9;
+}
 
-/* ---------------------------------------------------- سرصفحه و متن */
-.brand { position: absolute; top: 64px; inset-inline-start: 84px; display: flex; align-items: center; gap: 18px; }
-.brand img { width: 70px; height: 70px; border-radius: 21px; box-shadow: 0 16px 32px rgba(58, 42, 110, 0.30); }
-.brand b { font-size: 38px; font-weight: 700; letter-spacing: -0.4px; }
-.head { position: absolute; top: 154px; inset-inline: 84px; }
-.head h1 { font-size: 55px; font-weight: 700; line-height: 1.42; letter-spacing: -1.3px; }
-.head h1 em { font-style: normal; color: #6b4fbb; }
-.head p { margin-top: 16px; font-size: 26px; line-height: 1.8; color: #5b6070; }
+/* ---------------------------------------------------- سرصفحه و Tیتر */
+.brand { top: 52px; right: 86px; display: flex; align-items: center; gap: 16px; z-index: 6; }
+.brand__logo {
+  width: 66px; height: 66px; border-radius: 20px; overflow: hidden; display: block;
+  box-shadow: 0 14px 30px rgba(58, 42, 110, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+.brand img { width: 100%; height: 100%; display: block; border-radius: inherit; }
+.brand b { font-size: 37px; font-weight: 700; letter-spacing: -0.4px; }
+.kicker {
+  top: 64px; left: 86px; max-width: 600px; font-size: 21px; color: #565c6d;
+  background: rgba(255, 255, 255, 0.82); border: 1px solid var(--a-soft);
+  border-radius: 999px; padding: 10px 20px;
+}
+.head { top: 140px; right: 86px; left: 86px; z-index: 6; }
+.head h1 { font-size: 52px; font-weight: 700; line-height: 1.42; letter-spacing: -1.2px; max-width: 920px; }
+.head h1 em { font-style: normal; color: var(--a); }
+.head p { margin-top: 14px; font-size: 24px; line-height: 1.78; color: #5b6070; max-width: 880px; }
+.tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.tag {
+  display: inline-flex; align-items: center; padding: 9px 16px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86); border: 1px solid var(--a-soft);
+  font-size: 19px; color: #4a4f60; box-shadow: 0 10px 20px rgba(24, 20, 46, 0.08);
+}
 
 /* ---------------------------------------------------- صحنهٔ سه‌بعدی */
-.stage { position: absolute; inset: 0; perspective: 2100px; perspective-origin: 50% 46%; }
-
-/* هالهٔ نرم پشت گوشی: قاب را از پس‌زمینه جدا می‌کند و عمق می‌سازد */
+.stage { inset: 0; perspective: 2400px; perspective-origin: 50% 40%; }
+/* هالهٔ نرم پشت گوشی: قاب را از پس‌زمینه جدا می‌کند و عمق می‌سازد. */
 .glow {
-  position: absolute; top: 560px; left: 50%; margin-left: -440px;
-  width: 880px; height: 820px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(107, 79, 187, 0.30), rgba(47, 143, 168, 0.14) 58%, transparent 76%);
-  filter: blur(30px);
+  top: 620px; left: calc(var(--phone-left) + (var(--phone-w) - 940px) / 2);
+  width: 940px; height: 940px; border-radius: 50%; z-index: 1;
+  background: radial-gradient(closest-side, var(--a-glow), transparent 76%);
+  filter: blur(34px);
 }
-/* سایهٔ تماس روی «زمین»: گوشی را به کادر می‌چسباند */
+/* سایهٔ تماس روی «زمین»: گوشی را به کادر می‌چسباند. */
 .ground {
-  position: absolute; left: 50%; margin-left: -320px; top: 1778px;
-  width: 640px; height: 88px; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(38, 28, 76, 0.38), rgba(38, 28, 76, 0.14) 56%, transparent 78%);
+  top: 1806px; left: calc(var(--phone-left) + (var(--phone-w) - 700px) / 2);
+  width: 700px; height: 92px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(closest-side, rgba(38, 28, 76, 0.42), rgba(38, 28, 76, 0.14) 56%, transparent 78%);
   filter: blur(18px);
 }
 
@@ -71,10 +142,9 @@ body {
    عمق. با preserve-3d خودِ مرورگر عمق را می‌سازد، پس ضخامت گوشی واقعی است و
    لازم نیست چرخش را دستی جبران کنیم. */
 .box {
-  position: absolute; inset-inline: 0; margin-inline: auto; top: var(--phone-top);
+  position: absolute; left: var(--phone-left); top: var(--phone-top);
   width: var(--phone-w); height: var(--phone-h);
-  transform-style: preserve-3d;
-  transform: translateX(-10px) rotateX(5deg) rotateY(-13deg) rotateZ(-1.5deg);
+  transform-style: preserve-3d; transform: var(--phone-tilt); z-index: 3;
 }
 .face { position: absolute; inset: 0; border-radius: var(--phone-r); }
 .face--back {
@@ -131,71 +201,142 @@ body {
   background: linear-gradient(114deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.08) 17%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 74%, rgba(255, 255, 255, 0.17) 100%);
 }
 
-/* کارت‌های شناور: عمق را باورپذیر می‌کنند. جای هر دو طوری انتخاب شده که
-   از کنارِ گوشی بیرون بزنند، نه روی محتوای صفحهٔ اپ. */
-.float {
-  position: absolute; display: flex; align-items: center; gap: 15px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(255, 255, 255, 0.94);
-  box-shadow: 0 28px 56px rgba(22, 18, 44, 0.24);
+/* ---------------------------------------------------- ستون محتوای هر تصویر
+   ستون در طرف مخالفِ گوشی می‌نشیند، پس هیچ کارتی روی صفحهٔ اپ نمی‌افتد.
+   سه گروه با space-between پخش می‌شوند تا ستون هم خالی نماند. */
+.rail {
+  top: var(--rail-top); bottom: 40px; width: var(--rail-w);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 18px; z-index: 5;
 }
-.float--card {
-  top: 1688px; inset-inline-start: 56px; width: 372px; padding: 22px 28px;
-  transform: translateZ(120px) rotateZ(3deg);
+.rail--right { right: var(--rail-margin); }
+.rail--left { left: var(--rail-margin); }
+/* رگهٔ نازک در سمتِ روبه‌روی گوشی: ستون را یکپارچه نشان می‌دهد و فاصلهٔ
+   بین بلوک‌ها خالی به نظر نمی‌رسد. */
+.rail::before {
+  content: ""; position: absolute; top: 4px; bottom: 60px; width: 3px; border-radius: 3px;
+  background: linear-gradient(var(--a-soft), var(--b-soft) 60%, transparent);
 }
-.float--badge {
-  top: 430px; inset-inline-end: 150px; width: 112px; height: 112px; padding: 0;
-  justify-content: center; border-radius: 34px; transform: translateZ(96px) rotateZ(-7deg);
-  background: linear-gradient(150deg, #7b5ecb, #5b3fa6); color: #fff; border: 0;
-  box-shadow: 0 24px 46px rgba(64, 44, 130, 0.40);
+.rail--right::before { left: -26px; }
+.rail--left::before { right: -26px; }
+.rail__note {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 10px;
+  font-size: 19px; color: #5b6070; background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--a-soft); border-radius: 999px; padding: 10px 18px;
 }
-.float__icon {
-  flex: none; width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center;
-  background: rgba(107, 79, 187, 0.12); color: #6b4fbb; font-size: 24px;
+.rail__note b { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--a); }
+.rail__step { display: flex; align-items: center; gap: 14px; }
+.rail__step b {
+  width: 78px; height: 78px; border-radius: 25px; background: var(--a); color: #fff;
+  font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-size: 34px; font-weight: 700;
+  display: grid; place-items: center; box-shadow: 0 18px 34px var(--a-shadow);
 }
-.float--badge i { font-size: 41px; }
-.float__text { display: grid; gap: 3px; }
-.float__text b { font-size: 25px; font-weight: 700; letter-spacing: -0.3px; }
-.float__text small { font-size: 19px; color: #6f7482; }
+.rail__step span { font-size: 26px; font-weight: 700; color: #3b3653; }
+.rail__chips { display: grid; gap: 16px; }
 
-/* ---------------------------------------------------- هندسه و سرصفحه
+.chip {
+  display: flex; align-items: center; gap: 16px; padding: 19px 22px; border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+}
+.chip__i {
+  flex: none; width: 56px; height: 56px; border-radius: 19px; display: grid; place-items: center;
+  background: var(--a-soft); color: var(--a); font-size: 25px;
+}
+.chip__t { display: grid; gap: 3px; }
+.chip__t b { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+.chip__t small { font-size: 18px; color: #6f7482; }
+
+/* سبک ستون: خط زمانی، شماره‌دار، قرص‌های جمع‌وجمع */
+.rail--timeline .rail__chips { position: relative; padding-right: 26px; }
+.rail--timeline .rail__chips::before {
+  content: ""; position: absolute; right: 6px; top: 18px; bottom: 18px; width: 2px;
+  background: linear-gradient(var(--a-dot), var(--b-dot));
+}
+.rail--timeline .chip { position: relative; }
+.rail--timeline .chip::before {
+  content: ""; position: absolute; right: -26px; top: 50%; margin-top: -7px;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--a);
+  box-shadow: 0 0 0 5px var(--a-soft);
+}
+.rail--numbered .chip__i {
+  background: var(--a); color: #fff; font-family: "YekanBakh FaNum", "Pinar FD", sans-serif;
+  font-size: 26px; font-weight: 700;
+}
+.rail--pills .chip { padding: 12px 18px; border-radius: 999px; }
+.rail--pills .chip__i { width: 44px; height: 44px; border-radius: 50%; font-size: 20px; }
+.rail--pills .chip__t b { font-size: 22px; }
+
+/* ---------------------------------------------------- بلوک‌های امضا */
+.sign { width: 100%; }
+.mini {
+  border-radius: 26px; background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.96); box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+  padding: 20px 22px;
+}
+.mini__t { font-size: 19px; color: #6f7482; margin-bottom: 14px; }
+.brow { display: flex; justify-content: space-between; font-size: 20px; margin-bottom: 7px; }
+.bar { height: 12px; border-radius: 999px; background: var(--a-soft); overflow: hidden; margin-bottom: 14px; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--a), var(--b)); }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.pill {
+  display: inline-flex; align-items: center; padding: 9px 17px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94); font-size: 19px; color: #3b3653;
+  box-shadow: 0 12px 24px rgba(24, 20, 46, 0.12);
+}
+.fan { position: relative; height: 154px; }
+.fan i {
+  position: absolute; bottom: 0; width: 82px; height: 128px; border-radius: 14px;
+  background: linear-gradient(160deg, var(--a), var(--b));
+  box-shadow: 0 16px 30px rgba(24, 20, 46, 0.22), inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+.dice { display: flex; gap: 12px; }
+.die {
+  width: 78px; height: 78px; border-radius: 20px; background: #fff; display: grid; place-items: center;
+  color: var(--a); font-size: 34px;
+  box-shadow: 0 16px 30px rgba(24, 20, 46, 0.18), inset 0 0 0 1px var(--a-soft);
+}
+.bubble {
+  position: relative; background: rgba(255, 255, 255, 0.96); border-radius: 26px;
+  padding: 20px 22px; box-shadow: 0 22px 44px rgba(24, 20, 46, 0.16);
+}
+.bubble::after {
+  content: ""; position: absolute; bottom: -14px; right: 44px; width: 0; height: 0;
+  border-left: 16px solid transparent; border-right: 16px solid transparent;
+  border-top: 16px solid rgba(255, 255, 255, 0.96);
+}
+.tl { display: grid; gap: 16px; }
+.tl div { display: flex; align-items: center; gap: 12px; font-size: 20px; }
+.tl div b { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--a); box-shadow: 0 0 0 4px var(--a-soft); }
+.stat { display: grid; gap: 4px; }
+.stat b { font-family: "YekanBakh FaNum", "Pinar FD", sans-serif; font-size: 54px; font-weight: 700; color: var(--a); line-height: 1.1; }
+.stat small { font-size: 19px; color: #6f7482; }
+.orbit { position: relative; height: 268px; display: grid; place-items: center; }
+.orbit span { position: absolute; border-radius: 50%; border: 2px solid var(--a-dot); }
+.orbit img { width: 72px; height: 72px; border-radius: 22px; box-shadow: 0 14px 30px rgba(58, 42, 110, 0.3); }
+
+/* ---------------------------------------------------- هندسه
    اندازه‌های ماکت از پایتون تزریق می‌شود تا یک منبعِ حقیقت بماند. */
 :root {
   --phone-w: 660px;
   --phone-h: 1476px;
   --phone-pad: 13px;
-  --phone-top: 396px;
+  --phone-top: 388px;
   --phone-d: 28px;
   --phone-r: 74px;
   --status-h: 78px;
   --shot-h: 1372px;
   --screen-inner: 634px;
   --screen-r: 61px;
+  --rail-w: 330px;
+  --rail-margin: 56px;
+  --rail-top: 388px;
 }
-/* نشان و شعار دو عنصر جدا هستند تا هیچ‌وقت روی هم نیفتند. */
-.brand { position: absolute; top: 54px; inset-inline-start: 86px; display: flex; align-items: center; gap: 16px; }
-.brand__logo {
-  width: 66px; height: 66px; border-radius: 20px; overflow: hidden; display: block;
-  box-shadow: 0 14px 30px rgba(58, 42, 110, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-}
-.brand img { width: 100%; height: 100%; border-radius: inherit; box-shadow: none; }
-.brand b { font-size: 37px; font-weight: 700; letter-spacing: -0.4px; }
-.kicker {
-  position: absolute; top: 66px; inset-inline-end: 86px; max-width: 600px;
-  font-size: 21px; color: #565c6d; background: rgba(255, 255, 255, 0.80);
-  border: 1px solid rgba(107, 79, 187, 0.16); border-radius: 999px; padding: 10px 20px;
-  box-shadow: 0 10px 22px rgba(58, 42, 110, 0.10);
-}
-.head { position: absolute; top: 128px; inset-inline: 86px; }
-.head h1 { font-size: 52px; font-weight: 700; line-height: 1.42; letter-spacing: -1.2px; }
-.head h1 em { font-style: normal; color: #6b4fbb; }
-.head p { margin-top: 16px; font-size: 24px; line-height: 1.78; color: #5b6070; max-width: 900px; }
 </style>
 </head>
 <body>
-<div class="canvas" id="canvas"></div>
+<div id="canvas"></div>
 <script>
-var FRAMES = [{"title": "فالت را از دلِ نیتِ <em>امروزت</em> بگیر", "sub": "اول نیتت را می‌نویسی، بعد نشانه راهش را نشان می‌دهد. هفت روش، یک نیت.", "screen": "start", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-wand-magic-sparkles", "floatText": "هفت روش فال", "badgeIcon": "fa-star", "time": "۹:۴۱"}, {"title": "فال حافظ، با همهٔ <em>غزل</em> و تفسیر امروزت", "sub": "غزل را با کلیدواژه‌های نیتت می‌خوانیم و معنی‌اش را برای خودت می‌گوییم.", "screen": "hafez", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-book-open-reader", "floatText": "تفسیر روی نیت تو", "badgeIcon": "fa-feather-pointed", "time": "۹:۴۱"}, {"title": "کارت‌های تاروت <em>واقعاً</em> رو می‌شوند", "sub": "سه کارت با نام، جایگاه و راست یا برگشته بودن — هر فال شکل خودش را دارد.", "screen": "tarot", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-clone", "floatText": "سه کارت نمادین", "badgeIcon": "fa-hand-sparkles", "time": "۹:۴۱"}, {"title": "تاس‌های نمادین، با همان <em>چشم‌ها</em>", "sub": "سه تاس واقعی می‌افتند و هر عدد معنی، جهت و تفسیر خودش را دارد.", "screen": "dice", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-dice", "floatText": "سه تاس و معنی هر عدد", "badgeIcon": "fa-dice-five", "time": "۹:۴۱"}, {"title": "هفت روش فال، هر کدام با <em>ابزار خودش</em>", "sub": "حافظ، تاروت، تاس، رون، عدد، طالع و چینی — از هم قابل تشخیص و متفاوت.", "screen": "methods", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-shapes", "floatText": "ابزار جدا برای هر فال", "badgeIcon": "fa-layer-group", "time": "۹:۴۱"}, {"title": "یک جمله از نیتت، <em>تفاوت</em> فال را می‌سازد", "sub": "تفسیر روی همان چیزی سوار می‌شود که خودت نوشته‌ای، نه روی یک متن آماده.", "screen": "intent", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-feather-pointed", "floatText": "تفسیر شخصی‌سازی‌شده", "badgeIcon": "fa-quote-right", "time": "۹:۴۱"}, {"title": "<em>زندگی در عدد</em>؛ نگاهی آماری به خودت", "sub": "از ریتم قلب و عددِ غذا تا الگوهای رفتاری — همه از تولدِ خودت حساب می‌شود.", "screen": "life", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-chart-simple", "floatText": "بیش از ۵۰ کارت آماری", "badgeIcon": "fa-infinity", "time": "۹:۴۱"}, {"title": "ده تستِ شخصیت، <em>در یک جا</em>", "sub": "MBTI، پنج عامل بزرگ، کهن‌الگوهای یونگ، انیاگرام، DISC، چاکرا و بیشتر.", "screen": "tests", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-brain", "floatText": "ده آزمون معتبر", "badgeIcon": "fa-chart-pie", "time": "۹:۴۱"}, {"title": "همهٔ خوانش‌ها و نتیجه‌ها، <em>در پروندهٔ تو</em>", "sub": "هر فال و هر تست ذخیره می‌شود تا بعداً برگردی، مقایسه کنی و پرونده‌ات را ببینی.", "screen": "history", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-clock-rotate-left", "floatText": "تاریخچهٔ کامل", "badgeIcon": "fa-bookmark", "time": "۹:۴۱"}, {"title": "نتیجهٔ دقیق، با <em>نمرهٔ هر مؤلفه</em>", "sub": "نمودار محورها، تفسیر پاسخ‌ها و قدمِ بعدی — همه بر اساس جواب‌های خودت.", "screen": "result", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "floatIcon": "fa-chart-column", "floatText": "نمرهٔ هر مؤلفه", "badgeIcon": "fa-award", "time": "۹:۴۱"}];
+var FRAMES = [{"screen": "start", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--orbit", "style": "--a: #6b4fbb; --b: #2f8fa8; --a-soft: rgba(107, 79, 187, 0.15); --a-dot: rgba(107, 79, 187, 0.26); --a-glow: rgba(107, 79, 187, 0.32); --a-shadow: rgba(107, 79, 187, 0.4); --b-soft: rgba(47, 143, 168, 0.26); --b-dot: rgba(47, 143, 168, 0.24); --phone-left: -30px; --phone-tilt: rotateX(4deg) rotateY(-12deg) rotateZ(-1deg)", "title": "فالت را از دلِ نیتِ <em>امروزت</em> بگیر", "sub": "اول نیتت را می‌نویسی، بعد نشانه راهش را نشان می‌دهد. هفت روش، یک نیت.", "tags": "<span class=\"tag\">فال حافظ</span><span class=\"tag\">تاروت</span><span class=\"tag\">تست شخصیت</span>", "deco": "<aside class=\"rail rail--right rail--stack\"><div class=\"rail__step\"><b>۰۱</b><span>شروع سفر</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-wand-magic-sparkles\"></i></span><span class=\"chip__t\"><b>هفت روش فال</b><small>حافظ، تاروت، تاس و رون</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-brain\"></i></span><span class=\"chip__t\"><b>ده تست شخصیت</b><small>با فرمول واقعی هر آزمون</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-clock-rotate-left\"></i></span><span class=\"chip__t\"><b>پروندهٔ خوانش‌ها</b><small>همهٔ فال‌ها و نتیجه‌ها</small></span></div></div><div class=\"rail__note\"><b></b>نسخهٔ ۱٫۰ — همین حالا</div>\n<div class=\"sign mini\">\n<div class=\"mini__t\">یک نیت، هفت مسیر</div>\n<div class=\"orbit\">\n  <span style=\"width:132px;height:132px;left:calc(50% - 66px);top:calc(50% - 66px)\"></span>\n  <span style=\"width:186px;height:186px;left:calc(50% - 93px);top:calc(50% - 93px);border-color:var(--b-dot)\"></span>\n  <span style=\"width:240px;height:240px;left:calc(50% - 120px);top:calc(50% - 120px);border-color:var(--a-soft)\"></span>\n  <img src=\"/static/icons/icon-192.png\" alt=\"\" />\n</div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "hafez", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--arc", "style": "--a: #2f8fa8; --b: #6b4fbb; --a-soft: rgba(47, 143, 168, 0.15); --a-dot: rgba(47, 143, 168, 0.26); --a-glow: rgba(47, 143, 168, 0.32); --a-shadow: rgba(47, 143, 168, 0.4); --b-soft: rgba(107, 79, 187, 0.26); --b-dot: rgba(107, 79, 187, 0.24); --phone-left: 450px; --phone-tilt: rotateX(4deg) rotateY(11deg) rotateZ(1deg)", "title": "فال حافظ، با همهٔ <em>غزل</em> و تفسیر امروزت", "sub": "غزل را با کلیدواژه‌های نیتت می‌خوانیم و معنی‌اش را برای خودت می‌گوییم.", "tags": "<span class=\"tag\">غزل کامل</span><span class=\"tag\">تفسیر امروز</span><span class=\"tag\">کلیدواژه‌ها</span>", "deco": "<aside class=\"rail rail--left rail--timeline\"><div class=\"rail__step\"><b>۰۲</b><span>فال حافظ</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-book-open-reader\"></i></span><span class=\"chip__t\"><b>غزل کامل</b><small>با تفسیر همین امروز</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-key\"></i></span><span class=\"chip__t\"><b>کلیدواژه‌های نیت</b><small>روی همان جملهٔ تو</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-feather-pointed\"></i></span><span class=\"chip__t\"><b>متن پایه هم هست</b><small>حتی اگر مدل قطع باشد</small></span></div></div><div class=\"rail__note\"><b></b>متن پایه، همیشه هست</div>\n<div class=\"sign bubble\" style=\"font-size:20px;line-height:1.85\">\n  «دلا بسوز که سوز تو کار‌ها بکند<br />نیاز نیم‌شبی دفعِ صد بلا بکند»\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "tarot", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--blobs", "style": "--a: #c2456b; --b: #6b4fbb; --a-soft: rgba(194, 69, 107, 0.15); --a-dot: rgba(194, 69, 107, 0.26); --a-glow: rgba(194, 69, 107, 0.32); --a-shadow: rgba(194, 69, 107, 0.4); --b-soft: rgba(107, 79, 187, 0.26); --b-dot: rgba(107, 79, 187, 0.24); --phone-left: -30px; --phone-tilt: rotateX(3deg) rotateY(-8deg) rotateZ(-0.6deg)", "title": "کارت‌های تاروت <em>واقعاً</em> رو می‌شوند", "sub": "سه کارت با نام، جایگاه و راست یا برگشته بودن — هر فال شکل خودش را دارد.", "tags": "<span class=\"tag\">یک یا سه کارت</span><span class=\"tag\">راست و برگشته</span><span class=\"tag\">سه کارت</span>", "deco": "<aside class=\"rail rail--right rail--pills\"><div class=\"rail__step\"><b>۰۳</b><span>کارت تاروت</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-clone\"></i></span><span class=\"chip__t\"><b>یک یا سه کارت</b><small>به انتخاب خودت</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-arrows-rotate\"></i></span><span class=\"chip__t\"><b>راست و برگشته</b><small>جایگاه هر کارت مشخص</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-hand-sparkles\"></i></span><span class=\"chip__t\"><b>کارت‌ها رو می‌شوند</b><small>با انیمیشن واقعی</small></span></div></div><div class=\"rail__note\"><b></b>کارت‌ها واقعاً رو می‌شوند</div>\n<div class=\"sign mini\">\n<div class=\"mini__t\">سه کارت، سه معنی</div>\n<div class=\"fan\">\n  <i style=\"right:0;transform:rotate(-10deg)\"></i>\n  <i style=\"right:74px;bottom:16px\"></i>\n  <i style=\"right:148px;transform:rotate(10deg)\"></i>\n</div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "dice", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--grid", "style": "--a: #c98a2e; --b: #b1541f; --a-soft: rgba(201, 138, 46, 0.15); --a-dot: rgba(201, 138, 46, 0.26); --a-glow: rgba(201, 138, 46, 0.32); --a-shadow: rgba(201, 138, 46, 0.4); --b-soft: rgba(177, 84, 31, 0.26); --b-dot: rgba(177, 84, 31, 0.24); --phone-left: 450px; --phone-tilt: rotateX(5deg) rotateY(8deg) rotateZ(0.8deg)", "title": "تاس‌های نمادین، با همان <em>چشم‌ها</em>", "sub": "سه تاس واقعی می‌افتند و هر عدد معنی، جهت و تفسیر خودش را دارد.", "tags": "<span class=\"tag\">سه تاس</span><span class=\"tag\">چشم‌های واقعی</span><span class=\"tag\">جهت هر عدد</span>", "deco": "<aside class=\"rail rail--left rail--numbered\"><div class=\"rail__step\"><b>۰۴</b><span>فال تاس</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\">۱</span><span class=\"chip__t\"><b>سه تاس نمادین</b><small>با چشم‌های واقعی</small></span></div><div class=\"chip\"><span class=\"chip__i\">۲</span><span class=\"chip__t\"><b>معنی هر عدد</b><small>جهت و تفسیر خودش</small></span></div><div class=\"chip\"><span class=\"chip__i\">۳</span><span class=\"chip__t\"><b>هیچ فالی تکراری نیست</b><small>هر بار از نو</small></span></div></div><div class=\"rail__note\"><b></b>هر عدد، یک معنی</div>\n<div class=\"sign mini\">\n<div class=\"mini__t\">تاس‌های امروز</div>\n<div class=\"dice\">\n  <span class=\"die\"><i class=\"fa-solid fa-dice-three\"></i></span>\n  <span class=\"die\"><i class=\"fa-solid fa-dice-five\"></i></span>\n  <span class=\"die\"><i class=\"fa-solid fa-dice-one\"></i></span>\n</div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "methods", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--mesh", "style": "--a: #4b53c9; --b: #2f8fa8; --a-soft: rgba(75, 83, 201, 0.15); --a-dot: rgba(75, 83, 201, 0.26); --a-glow: rgba(75, 83, 201, 0.32); --a-shadow: rgba(75, 83, 201, 0.4); --b-soft: rgba(47, 143, 168, 0.26); --b-dot: rgba(47, 143, 168, 0.24); --phone-left: -30px; --phone-tilt: rotateX(5deg) rotateY(8deg) rotateZ(0.8deg)", "title": "هفت روش فال، هر کدام با <em>ابزار خودش</em>", "sub": "حافظ، تاروت، تاس، رون، عدد، طالع و چینی — از هم قابل تشخیص و متفاوت.", "tags": "<span class=\"tag\">هفت روش</span><span class=\"tag\">یک نیت</span><span class=\"tag\">ابزار جدا</span>", "deco": "<aside class=\"rail rail--right rail--pills\"><div class=\"rail__step\"><b>۰۵</b><span>روش‌های فال</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-book-open-reader\"></i></span><span class=\"chip__t\"><b>حافظ و تاروت</b><small>با نیت خودت</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-dice\"></i></span><span class=\"chip__t\"><b>تاس و رون</b><small>با ابزار مخصوصشان</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-star-and-crescent\"></i></span><span class=\"chip__t\"><b>عدد، طالع و چینی</b><small>همه در یک جا</small></span></div></div><div class=\"rail__note\"><b></b>هیچ دو فالی یکسان نیست</div>\n<div class=\"sign mini\">\n<div class=\"mini__t\">یک نیت، هفت روش</div>\n<div class=\"pills\">\n  <span class=\"pill\">حافظ</span><span class=\"pill\">تاروت</span><span class=\"pill\">تاس</span>\n  <span class=\"pill\">رون</span><span class=\"pill\">عدد</span><span class=\"pill\">طالع</span>\n  <span class=\"pill\">چینی</span>\n</div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "intent", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--sparkle", "style": "--a: #8a4fc9; --b: #c2456b; --a-soft: rgba(138, 79, 201, 0.15); --a-dot: rgba(138, 79, 201, 0.26); --a-glow: rgba(138, 79, 201, 0.32); --a-shadow: rgba(138, 79, 201, 0.4); --b-soft: rgba(194, 69, 107, 0.26); --b-dot: rgba(194, 69, 107, 0.24); --phone-left: 450px; --phone-tilt: rotateX(4deg) rotateY(11deg) rotateZ(1deg)", "title": "یک جمله از نیتت، <em>تفاوت</em> فال را می‌سازد", "sub": "تفسیر روی همان چیزی سوار می‌شود که خودت نوشته‌ای، نه روی یک متن آماده.", "tags": "<span class=\"tag\">نیت خودت</span><span class=\"tag\">تفسیر شخصی</span><span class=\"tag\">حریم خصوصی</span>", "deco": "<aside class=\"rail rail--left rail--stack\"><div class=\"rail__step\"><b>۰۶</b><span>نوشتن نیت</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-feather-pointed\"></i></span><span class=\"chip__t\"><b>نیت خودت</b><small>یک جملهٔ کوتاه کافی است</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-wand-magic-sparkles\"></i></span><span class=\"chip__t\"><b>تفسیر شخصی</b><small>روی همان جمله</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-lock\"></i></span><span class=\"chip__t\"><b>حریم خصوصی</b><small>لینک فال فقط برای تو</small></span></div></div><div class=\"rail__note\"><b></b>لینک فال فقط برای تو</div>\n<div class=\"sign bubble\" style=\"font-size:20px;line-height:1.8\">\n  «بین دو انتخاب مانده‌ام؛ کدام راه به حالم بیشتر می‌خورد؟»\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "life", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--waves", "style": "--a: #2f8f6b; --b: #2f8fa8; --a-soft: rgba(47, 143, 107, 0.15); --a-dot: rgba(47, 143, 107, 0.26); --a-glow: rgba(47, 143, 107, 0.32); --a-shadow: rgba(47, 143, 107, 0.4); --b-soft: rgba(47, 143, 168, 0.26); --b-dot: rgba(47, 143, 168, 0.24); --phone-left: -30px; --phone-tilt: rotateX(3deg) rotateY(-8deg) rotateZ(-0.6deg)", "title": "<em>زندگی در عدد</em>؛ نگاهی آماری به خودت", "sub": "از ریتم قلب و عددِ غذا تا الگوهای رفتاری — همه از تولدِ خودت حساب می‌شود.", "tags": "<span class=\"tag\">۵۲+ کارت</span><span class=\"tag\">چهار دسته</span><span class=\"tag\">آمار شخصی</span>", "deco": "<aside class=\"rail rail--right rail--numbered\"><div class=\"rail__step\"><b>۰۷</b><span>زندگی در عدد</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\">۱</span><span class=\"chip__t\"><b>بیش از ۵۰ کارت</b><small>در چهار دستهٔ جدا</small></span></div><div class=\"chip\"><span class=\"chip__i\">۲</span><span class=\"chip__t\"><b>هویت و بدن</b><small>از تولد خودت</small></span></div><div class=\"chip\"><span class=\"chip__i\">۳</span><span class=\"chip__t\"><b>زمان و جهان</b><small>فاز ماه و شمارش روزها</small></span></div></div><div class=\"rail__note\"><b></b>همه از تولد خودت</div>\n<div class=\"sign mini\" style=\"display:grid;gap:18px\">\n  <div class=\"stat\"><b>۵۲+</b><small>کارت آماری در چهار دسته</small></div>\n  <div class=\"stat\"><b>۴</b><small>هویت، زمان، بدن و جهان</small></div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "tests", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--dots", "style": "--a: #2f7fc9; --b: #6b4fbb; --a-soft: rgba(47, 127, 201, 0.15); --a-dot: rgba(47, 127, 201, 0.26); --a-glow: rgba(47, 127, 201, 0.32); --a-shadow: rgba(47, 127, 201, 0.4); --b-soft: rgba(107, 79, 187, 0.26); --b-dot: rgba(107, 79, 187, 0.24); --phone-left: 450px; --phone-tilt: rotateX(5deg) rotateY(8deg) rotateZ(0.8deg)", "title": "ده تستِ شخصیت، <em>در یک جا</em>", "sub": "MBTI، پنج عامل بزرگ، کهن‌الگوهای یونگ، انیاگرام، DISC، چاکرا و بیشتر.", "tags": "<span class=\"tag\">MBTI</span><span class=\"tag\">پنج عامل بزرگ</span><span class=\"tag\">انیاگرام</span>", "deco": "<aside class=\"rail rail--left rail--timeline\"><div class=\"rail__step\"><b>۰۸</b><span>تست‌های شخصیت</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-brain\"></i></span><span class=\"chip__t\"><b>ده آزمون معتبر</b><small>MBTI، پنج عامل، DISC</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-compass\"></i></span><span class=\"chip__t\"><b>نمرهٔ هر مؤلفه</b><small>با نمودار محورها</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-chart-pie\"></i></span><span class=\"chip__t\"><b>تفسیر و قدم بعدی</b><small>روی جواب‌های خودت</small></span></div></div><div class=\"rail__note\"><b></b>نتیجه با جواب‌های خودت</div>\n<div class=\"sign mini\">\n  <div class=\"mini__t\">نمرهٔ مؤلفه‌های تو</div>\n  <div class=\"brow\"><span>درون‌گرا</span><span>۶۲٪</span></div>\n  <div class=\"bar\"><i style=\"width:62%\"></i></div>\n  <div class=\"brow\"><span>شهودی</span><span>۷۴٪</span></div>\n  <div class=\"bar\"><i style=\"width:74%\"></i></div>\n  <div class=\"brow\"><span>احساسی</span><span>۵۸٪</span></div>\n  <div class=\"bar\"><i style=\"width:58%\"></i></div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "history", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--bars", "style": "--a: #5b6070; --b: #2f8fa8; --a-soft: rgba(91, 96, 112, 0.15); --a-dot: rgba(91, 96, 112, 0.26); --a-glow: rgba(91, 96, 112, 0.32); --a-shadow: rgba(91, 96, 112, 0.4); --b-soft: rgba(47, 143, 168, 0.26); --b-dot: rgba(47, 143, 168, 0.24); --phone-left: -30px; --phone-tilt: rotateX(4deg) rotateY(-12deg) rotateZ(-1deg)", "title": "همهٔ خوانش‌ها و نتیجه‌ها، <em>در پروندهٔ تو</em>", "sub": "هر فال و هر تست ذخیره می‌شود تا بعداً برگردی، مقایسه کنی و پرونده‌ات را ببینی.", "tags": "<span class=\"tag\">تاریخچه</span><span class=\"tag\">مقایسه</span><span class=\"tag\">خروجی چاپ</span>", "deco": "<aside class=\"rail rail--right rail--timeline\"><div class=\"rail__step\"><b>۰۹</b><span>پروندهٔ خوانش‌ها</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-bookmark\"></i></span><span class=\"chip__t\"><b>همهٔ فال‌ها</b><small>با تاریخ و روش</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-chart-simple\"></i></span><span class=\"chip__t\"><b>نتیجهٔ تست‌ها</b><small>قابل مقایسه با هم</small></span></div><div class=\"chip\"><span class=\"chip__i\"><i class=\"fa-solid fa-print\"></i></span><span class=\"chip__t\"><b>پروندهٔ قابل چاپ</b><small>برای خودت</small></span></div></div><div class=\"rail__note\"><b></b>همه در یک پرونده</div>\n<div class=\"sign mini tl\">\n  <div><b></b><span>فال حافظ — امروز</span></div>\n  <div><b></b><span>تاروت سه‌کارتی — دیروز</span></div>\n  <div><b></b><span>تست MBTI — ۳ روز پیش</span></div>\n  <div><b></b><span>زندگی در عدد — هفتهٔ پیش</span></div>\n</div>\n</aside>", "time": "۹:۴۱"}, {"screen": "result", "kicker": "فال و تست شخصیت، فارسی و راست‌به‌چپ", "motif": "motif--burst", "style": "--a: #b8860b; --b: #6b4fbb; --a-soft: rgba(184, 134, 11, 0.15); --a-dot: rgba(184, 134, 11, 0.26); --a-glow: rgba(184, 134, 11, 0.32); --a-shadow: rgba(184, 134, 11, 0.4); --b-soft: rgba(107, 79, 187, 0.26); --b-dot: rgba(107, 79, 187, 0.24); --phone-left: 450px; --phone-tilt: rotateX(4deg) rotateY(-12deg) rotateZ(-1deg)", "title": "نتیجهٔ دقیق، با <em>نمرهٔ هر مؤلفه</em>", "sub": "نمودار محورها، تفسیر پاسخ‌ها و قدمِ بعدی — همه بر اساس جواب‌های خودت.", "tags": "<span class=\"tag\">نمرهٔ مؤلفه</span><span class=\"tag\">نمودار محور</span><span class=\"tag\">قدم بعدی</span>", "deco": "<aside class=\"rail rail--left rail--numbered\"><div class=\"rail__step\"><b>۱۰</b><span>نتیجهٔ دقیق</span></div><div class=\"rail__chips\"><div class=\"chip\"><span class=\"chip__i\">۱</span><span class=\"chip__t\"><b>نمرهٔ هر مؤلفه</b><small>عدد دقیق، نه حدس</small></span></div><div class=\"chip\"><span class=\"chip__i\">۲</span><span class=\"chip__t\"><b>تیپ شخصیتی</b><small>با نمودار محورها</small></span></div><div class=\"chip\"><span class=\"chip__i\">۳</span><span class=\"chip__t\"><b>قدم بعدی</b><small>پیشنهاد نشانه برای تو</small></span></div></div><div class=\"rail__note\"><b></b>قدم بعدی هم می‌آید</div>\n<div class=\"sign mini\">\n  <div class=\"mini__t\">نمرهٔ مؤلفه‌های تو</div>\n  <div class=\"brow\"><span>درون‌گرا</span><span>۶۲٪</span></div>\n  <div class=\"bar\"><i style=\"width:62%\"></i></div>\n  <div class=\"brow\"><span>شهودی</span><span>۷۴٪</span></div>\n  <div class=\"bar\"><i style=\"width:74%\"></i></div>\n  <div class=\"brow\"><span>احساسی</span><span>۵۸٪</span></div>\n  <div class=\"bar\"><i style=\"width:58%\"></i></div>\n</div>\n</aside>", "time": "۹:۴۱"}];
 var params = new URLSearchParams(location.search);
 var only = params.get("i");
 var index = only ? Math.max(1, Math.min(FRAMES.length, parseInt(only, 10))) : null;
@@ -206,35 +347,33 @@ var BATTERY = '<svg width="34" height="17" viewBox="0 0 34 17"><rect x="0.8" y="
 
 var host = document.getElementById("canvas");
 host.innerHTML = items.map(function (f) {
-  var title = f.title;
-  var alt = title.replace(/<[^>]+>/g, "");
-  return '' +
-  '<span class="dots"></span><span class="rings"><i></i><i></i><i></i></span>' +
-  '<section class="brand"><span class="brand__logo"><img src="/static/icons/icon-192.png" alt="نشانه" /></span><b>نشانه</b></section>' +
-  '<span class="kicker">' + (f.kicker || "") + '</span>' +
-  '<div class="head"><h1>' + title + '</h1><p>' + f.sub + '</p></div>' +
-  '<div class="stage">' +
-    '<span class="glow"></span>' +
-    '<span class="ground"></span>' +
-    '<div class="box">' +
-      '<span class="edge edge--left"></span><span class="edge edge--right"></span>' +
-      '<span class="key key--v1"></span><span class="key key--v2"></span><span class="key key--power"></span>' +
-      '<span class="face face--back"></span>' +
-      '<div class="face face--front">' +
-        '<div class="screen">' +
-          '<span class="island"></span>' +
-          '<div class="statusbar"><span class="time">' + (f.time || "۹:۴۱") + '</span>' +
-            '<span class="icons">' + SIGNAL + WIFI + BATTERY + '</span></div>' +
-          '<div class="shot"><img src="shots/' + f.screen + '.png" alt="' + alt + '" /></div>' +
-          '<span class="glare"></span>' +
+  return '<section class="canvas" style="' + f.style + '">' +
+    '<span class="motif ' + f.motif + '"></span>' +
+    '<section class="brand"><span class="brand__logo"><img src="/static/icons/icon-192.png" alt="نشانه" /></span><b>نشانه</b></section>' +
+    '<span class="kicker">' + f.kicker + '</span>' +
+    '<div class="head"><h1>' + f.title + '</h1><p>' + f.sub + '</p>' +
+      '<div class="tags">' + f.tags + '</div>' +
+    '</div>' +
+    '<div class="stage">' +
+      '<span class="glow"></span><span class="ground"></span>' +
+      '<div class="box">' +
+        '<span class="edge edge--left"></span><span class="edge edge--right"></span>' +
+        '<span class="key key--v1"></span><span class="key key--v2"></span><span class="key key--power"></span>' +
+        '<span class="face face--back"></span>' +
+        '<div class="face face--front">' +
+          '<div class="screen">' +
+            '<span class="island"></span>' +
+            '<div class="statusbar"><span class="time">' + (f.time || "۹:۴۱") + '</span>' +
+              '<span class="icons">' + SIGNAL + WIFI + BATTERY + '</span></div>' +
+            '<div class="shot"><img src="shots/' + f.screen + '.png" alt="" /></div>' +
+            '<span class="glare"></span>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="float float--card"><span class="float__icon"><i class="fa-solid ' + f.floatIcon + '"></i></span>' +
-      '<span class="float__text"><b>' + f.floatText + '</b><small>در اپ نشانه</small></span></div>' +
-    '<div class="float float--badge"><i class="fa-solid ' + f.badgeIcon + '"></i></div>' +
-  '</div>';
-}).join('');
+    f.deco +
+  '</section>';
+}).join("");
 </script>
 </body>
 </html>
