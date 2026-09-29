@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}ذهن‌خوان — یاد بگیرم{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in mind-failed">
+  <div class="quiz-head">
+    <a class="back-link" href="/mind"><i class="fa-solid fa-xmark" aria-hidden="true"></i> بستن</a>
+    <span class="quiz-head__count">{{ snap.asked | fa }} پرسش</span>
+  </div>
+
+  <div class="flow__mark mind-mark mind-mark--soft"><i class="fa-solid fa-face-smile-beam" aria-hidden="true"></i></div>
+  <h1 class="flow__title">این‌بار نتوانستم</h1>
+  <p class="flow__lead">
+    با این جواب‌ها به نتیجه نرسیدم. اسمش را بنویس تا یاد بگیرم؛ دفعهٔ بعد همین شخصیت
+    هم توی فهرست من است و برای نفرهای بعدی سریع‌تر پیدایش می‌کنم.
+  </p>
+
+  <form class="mind-learn" method="post" action="/mind/g/{{ game_id }}/learn">
+    <label class="field">
+      <span>اسم شخصیت چه بود؟</span>
+      <span class="field__control">
+        <input class="field__input" type="text" name="name" maxlength="60" required
+               autocomplete="off" placeholder="مثلاً: محمدعلی کلی">
+      </span>
+    </label>
+    <button class="btn btn--primary btn--block" type="submit">
+      <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> بنویس برایم
+    </button>
+  </form>
+
+  {% if path %}
+    <div class="mind-path">
+      <p class="mind-path__title"><i class="fa-solid fa-route" aria-hidden="true"></i> مسیری که رفتم</p>
+      {% for text, verb in path %}
+        <div class="mind-path__row">
+          <span>{{ text }}</span>
+          <b class="mind-path__verb mind-path__verb--{{ 'yes' if verb == 'بله' else ('no' if verb == 'نه' else 'maybe') }}">{{ verb }}</b>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="/mind/g/{{ game_id }}/again">
+    <button class="btn btn--ghost btn--block" type="submit">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> یک شخصیت دیگر امتحان کنیم
+    </button>
+  </form>
+</section>
+{% endblock %}

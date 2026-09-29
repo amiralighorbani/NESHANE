@@ -22,6 +22,17 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from . import db
 
+
+def _env_int(name: str, default: int) -> int:
+    """عدد محیطی را می‌خواند؛ هر مقدار نامعتبر (خالی، متن، منفی) پیش‌فرض می‌گیرد."""
+    raw = os.environ.get(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return max(0, int(float(str(raw).strip())))
+    except (TypeError, ValueError):
+        return default
+
 # پوشهٔ رسانه‌ها کنار دیتابیس می‌نشیند تا پشتیبان‌گیری از `data/` همه‌چیز را ببرد.
 MEDIA_DIR = Path(os.environ.get("NESHANE_ADS_DIR", db.DB_PATH.parent / "ads_media"))
 
@@ -56,6 +67,20 @@ WEEKDAYS = (
 
 MAX_HOLD_SECONDS = 180
 MAX_SKIP_AFTER = 60
+
+# --------------------------------------------------------------------------- #
+# سقف کلی پاپ‌اپ / global popup throttle
+# --------------------------------------------------------------------------- #
+# «روی هر صفحه یک پاپ‌اپ» یک تنظیمِ تبلیغ نیست، یک سیاست کلّی است: چون پاپ‌اپ روی
+# همهٔ صفحه‌ها نشان داده می‌شود، کاربر با چند کلیک پشت سر هم چند پنجره می‌دید.
+# این دو عدد همان سیاست کلّی‌اند و به تنظیم هیچ تبلیغی وابسته نیستند:
+#   * فاصلهٔ حداقلی بین دو پاپ‌اپ برای یک نفر (پیش‌فرض ۴۵ دقیقه)
+#   * سقف پاپ‌اپ در یک روز برای یک نفر (پیش‌فرض ۴ بار)
+# هر دو با متغیر محیطی قابل تغییرند؛ صفر یعنی «بی‌سقف».
+POPUP_COOLDOWN_SECONDS = _env_int("NESHANE_AD_COOLDOWN_MINUTES", 45) * 60
+POPUP_DAILY_CAP = _env_int("NESHANE_AD_POPUPS_PER_DAY", 4)
+# رویدادی که «یک پاپ‌اپ تازه به این نفر داده شد» را ثبت می‌کند؛ فقط برای همین سقف.
+POPUP_EVENT = "popup"
 
 
 # --------------------------------------------------------------------------- #
@@ -287,6 +312,39 @@ def _actor(user_id: Optional[int], visitor: str) -> str:
     return f"v{str(visitor or 'anon')[:48]}"
 
 
+def popup_throttle(actor: str, stamp: Optional[float] = None) -> Dict[str, Any]:
+    """وضعیت سقف کلی پاپ‌اپ برای این بازدیدکننده (برای پنل و آزمون).
+
+    خروجی: ``{"allowed", "reason", "cooldown_seconds", "daily_cap", "seen_today", "retry_in"}``.
+    """
+    moment = stamp if stamp is not None else time.time()
+    day_start = moment - (moment % 86400)
+    state: Dict[str, Any] = {
+        "allowed": True,
+        "reason": "ok",
+        "cooldown_seconds": POPUP_COOLDOWN_SECONDS,
+        "daily_cap": POPUP_DAILY_CAP,
+        "seen_today": 0,
+        "retry_in": 0,
+    }
+    if not actor:
+        return state
+    if POPUP_DAILY_CAP:
+        state["seen_today"] = db.ad_actor_events(actor, [POPUP_EVENT], day_start)["count"]
+    if POPUP_COOLDOWN_SECONDS:
+        recent = db.ad_actor_events(actor, [POPUP_EVENT], moment - POPUP_COOLDOWN_SECONDS)
+        if recent["last_at"]:
+            state["allowed"] = False
+            state["reason"] = "cooldown"
+            state["retry_in"] = int(max(1, POPUP_COOLDOWN_SECONDS - (moment - float(recent["last_at"]))))
+            return state
+    if POPUP_DAILY_CAP and state["seen_today"] >= POPUP_DAILY_CAP:
+        state["allowed"] = False
+        state["reason"] = "daily"
+        state["retry_in"] = int(day_start + 86400 - moment)
+    return state
+
+
 def eligible(
     user_id: Optional[int] = None,
     visitor: str = "",
@@ -296,11 +354,15 @@ def eligible(
     """همهٔ تبلیغ‌های واجد شرط این بازدیدکننده، به ترتیب اولویت.
 
     شرط‌ها: روشن باشد، داخل پنجرهٔ زمانی باشد، جای نمایشش با این جای بخواند و
-    سهمیهٔ روزانه و «دیگر نشان نده» نقض نشده باشد.
+    سهمیهٔ روزانه و «دیگر نشان نده» نقض نشده باشد. پاپ‌اپ‌ها یک سقف کلّی هم دارند
+    (فاصلهٔ بین دو پاپ‌اپ + سقف روزانه) که در `popup_throttle` حساب می‌شود.
     """
     moment = stamp if stamp is not None else time.time()
     day_start = moment - (moment % 86400)  # ابتدای روز محلی (تقریبی، برای سهمیه)
     actor = _actor(user_id, visitor)
+    # سقف کلّی پاپ‌اپ، پیش از هر محاسبهٔ دیگری. بنر این سقف را ندارد.
+    if placement == "popup" and not popup_throttle(actor, moment)["allowed"]:
+        return []
     rows: List[Dict[str, Any]] = []
 
     for ad in db.ads_all(active_only=True):
@@ -364,7 +426,12 @@ def public_payload(ad: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def record(ad_id: int, kind: str, user_id: Optional[int] = None, visitor: str = "") -> None:
-    """یک رویداد تبلیغ را ثبت می‌کند (نمایش، کلیک، ردکردن، دیگر نشان نده)."""
-    if kind not in {"impression", "click", "skip", "dismiss"}:
+    """یک رویداد تبلیغ را ثبت می‌کند (نمایش، کلیک، ردکردن، دیگر نشان نده).
+
+    `POPUP_EVENT` رویدادی داخلی است که سرور هنگام تحویل پاپ‌اپ ثبت می‌کند تا سقف
+    کلّی (فاصله و سقف روزانه) درست شمرده شود؛ در آمار پنل به‌عنوان «نمایش» شمرده
+    نمی‌شود.
+    """
+    if kind not in {"impression", "click", "skip", "dismiss", POPUP_EVENT}:
         return
     db.ad_event_add(int(ad_id), _actor(user_id, visitor), kind)

@@ -11,6 +11,7 @@ import os
 import sqlite3
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -227,6 +228,33 @@ CREATE INDEX IF NOT EXISTS idx_llm_calls_ok ON llm_calls(ok, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_llm_calls_user ON llm_calls(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id, created_at DESC);
+-- بازی «ذهن‌خوان»: هر دورِ بازی یک ردیف، و وضعیتش در یک ستون JSON می‌نشیند.
+-- چرا نه کوکی؟ چون بازی چند مرحله‌ای است و کاربر می‌تواند وسط کار صفحه را ببندد؛
+-- وضعیت سمت سرور می‌ماند تا هم جا نشکند، هم در پنل قابل بررسی باشد.
+CREATE TABLE IF NOT EXISTS mind_games (
+  id         TEXT PRIMARY KEY,
+  user_id    INTEGER,
+  visitor    TEXT DEFAULT '',   -- شناسهٔ مرورگر مهمان (برای بازی بدون ثبت‌نام)
+  state      TEXT NOT NULL DEFAULT '{}',
+  turns      INTEGER DEFAULT 0,
+  guesses    INTEGER DEFAULT 0,
+  solved     INTEGER DEFAULT 0, -- ۱ = درست حدس زد
+  created_at REAL NOT NULL,
+  updated_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mind_games_visitor ON mind_games(visitor, created_at DESC);
+
+-- شخصیت‌هایی که کاربران خودشان در پایان بازی اسم‌شان را نوشتند (یادگیری دیتاست).
+CREATE TABLE IF NOT EXISTS mind_learned (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  game_id     TEXT DEFAULT '',
+  user_id     INTEGER,
+  name        TEXT NOT NULL,
+  values_json TEXT NOT NULL DEFAULT '{}',
+  created_at  REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mind_learned_name ON mind_learned(name, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS idx_ads_active ON ads(active, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ad_events_ad ON ad_events(ad_id, kind, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ad_events_actor ON ad_events(actor, kind, created_at DESC);
@@ -1545,6 +1573,133 @@ def ad_last_event_at(ad_id: int, actor: str, kind: str) -> Optional[float]:
         (int(ad_id), str(actor), str(kind)),
     )
     return float(row["created_at"]) if row else None
+
+
+# --------------------------------------------------------------------------- #
+# بازی «ذهن‌خوان» / mind-reader game
+# --------------------------------------------------------------------------- #
+
+
+def mind_create(user_id: Optional[int], visitor: str) -> str:
+    """یک دورِ بازی تازه می‌سازد و شناسه‌اش را برمی‌گرداند."""
+    game_id = uuid.uuid4().hex[:16]
+    stamp = now()
+    _execute(
+        """INSERT INTO mind_games (id, user_id, visitor, state, created_at, updated_at)
+           VALUES (?, ?, ?, '{}', ?, ?)""",
+        (game_id, int(user_id) if user_id else None, str(visitor or "")[:48], stamp, stamp),
+    )
+    return game_id
+
+
+def mind_get(game_id: str) -> Optional[Dict[str, Any]]:
+    """یک دورِ بازی با وضعیتِ خوانده‌شده (JSON → دیکشنری)."""
+    row = _one("SELECT * FROM mind_games WHERE id = ?", (str(game_id or ""),))
+    if not row:
+        return None
+    data = dict(row)
+    try:
+        data["state"] = json.loads(data.get("state") or "{}")
+    except (TypeError, ValueError):
+        data["state"] = {}
+    return data
+
+
+def mind_save(
+    game_id: str,
+    state: Dict[str, Any],
+    turns: int = 0,
+    guesses: int = 0,
+    solved: int = 0,
+) -> None:
+    """وضعیت بازی را ذخیره می‌کند (هر جواب، یک ذخیره)."""
+    _execute(
+        """UPDATE mind_games SET state = ?, turns = ?, guesses = ?, solved = MAX(solved, ?),
+           updated_at = ? WHERE id = ?""",
+        (
+            json.dumps(state, ensure_ascii=False, separators=(",", ":")),
+            int(turns),
+            int(guesses),
+            int(solved),
+            now(),
+            str(game_id),
+        ),
+    )
+
+
+def mind_learn(game_id: str, user_id: Optional[int], name: str, values: Dict[str, Any]) -> None:
+    """شخصیتی را که کاربر نامش را نوشت ذخیره می‌کند تا دیتاست بزرگ‌تر شود."""
+    label = " ".join(str(name or "").split())[:60]
+    if len(label) < 2:
+        return
+    _execute(
+        "INSERT INTO mind_learned (game_id, user_id, name, values_json, created_at) VALUES (?, ?, ?, ?, ?)",
+        (
+            str(game_id or ""),
+            int(user_id) if user_id else None,
+            label,
+            json.dumps(values or {}, ensure_ascii=False, separators=(",", ":")),
+            now(),
+        ),
+    )
+
+
+def mind_learned(limit: int = 120) -> List[Dict[str, Any]]:
+    """شخصیت‌های یادگرفته‌شده؛ برای هر نام فقط تازه‌ترین ردیف.
+
+    (SQLite با `MAX(...)` و GROUP BY، مقادیر همان ردیفِ بیشینه را برمی‌گرداند.)
+    """
+    rows = _query(
+        """SELECT name, values_json, MAX(created_at) AS created_at FROM mind_learned
+           GROUP BY name ORDER BY created_at DESC LIMIT ?""",
+        (max(1, min(500, int(limit))),),
+    )
+    collected: List[Dict[str, Any]] = []
+    for row in rows:
+        data = dict(row)
+        try:
+            data["values"] = json.loads(data.get("values_json") or "{}")
+        except (TypeError, ValueError):
+            data["values"] = {}
+        if isinstance(data["values"], dict):
+            collected.append({"name": data["name"], "values": data["values"]})
+    return collected
+
+
+def mind_count(games: bool = True) -> int:
+    """شمارش دورهای بازی یا شخصیت‌های یادگرفته‌شده (برای آمار)."""
+    table = "mind_games" if games else "mind_learned"
+    row = _one(f"SELECT COUNT(*) AS value FROM {table}")
+    return int(row["value"]) if row else 0
+
+
+def ad_actor_events(actor: str, kinds: List[str], since: Optional[float] = None) -> Dict[str, Any]:
+    """تعداد و آخرین زمانِ رویدادهای یک بازدیدکننده، در **همهٔ** تبلیغ‌ها.
+
+    چرا لازم است: سقفِ هر تبلیغ (`max_per_day`) فقط می‌گوید «این تبلیغ چند بار»؛
+    ولی سؤال «کاربر در کل چند پاپ‌اپ دیده» به یک تبلیغ خاص ربطی ندارد. این‌جا نوعِ
+    رویداد صریح فرستاده می‌شود (مثلاً `["popup"]`) تا شمارشِ نمایشِ بنر با پاپ‌اپ
+    قاطی نشود.
+
+    خروجی: ``{"count": int, "last_at": float | None}``.
+    """
+    names = [str(kind) for kind in kinds if kind]
+    if not actor or not names:
+        return {"count": 0, "last_at": None}
+    placeholders = ", ".join("?" for _ in names)
+    clauses = ["actor = ?", f"kind IN ({placeholders})"]
+    params: List[Any] = [str(actor), *names]
+    if since is not None:
+        clauses.append("created_at >= ?")
+        params.append(float(since))
+    row = _one(
+        f"SELECT COUNT(*) AS value, MAX(created_at) AS last_at FROM ad_events WHERE {' AND '.join(clauses)}",
+        tuple(params),
+    )
+    if not row or not int(row["value"] or 0):
+        return {"count": 0, "last_at": None}
+    last = row["last_at"]
+    return {"count": int(row["value"]), "last_at": float(last) if last else None}
 
 
 def ad_stats(ad_id: int, days: int = 30) -> Dict[str, Any]:

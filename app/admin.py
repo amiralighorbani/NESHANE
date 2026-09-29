@@ -1409,6 +1409,11 @@ def ads_page(request: Request, ad_id: Optional[int] = None) -> Response:
         weekdays=ads.WEEKDAYS,
         media_limit_mb=round(ads.MAX_VIDEO_BYTES / 1024 / 1024),
         image_limit_mb=round(ads.MAX_IMAGE_BYTES / 1024 / 1024),
+        # سقف کلّی پاپ‌اپ (مستقل از تنظیم هر تبلیغ) تا در پنل دیده شود.
+        popup_cap={
+            "cooldown_minutes": ads.POPUP_COOLDOWN_SECONDS // 60,
+            "per_day": ads.POPUP_DAILY_CAP,
+        },
         totals={
             "all": len(rows),
             "active": sum(1 for row in rows if row["state"]["key"] == "active"),

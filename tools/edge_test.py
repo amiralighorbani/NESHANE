@@ -839,6 +839,57 @@ def case_toasts() -> None:
 # --------------------------------------------------------------------------- #
 
 
+def case_mind() -> None:
+    """بازی «ذهن‌خوان» با ورودی‌های عجیب: شناسهٔ غلط، جواب جعلی، اسم بلند."""
+    client = Client()
+    status, body, _ = client.get("/mind")
+    record("ذهن‌خوان: صفحهٔ معرفی", status, body)
+
+    status, location, _ = client.post("/mind/start", {})
+    record("ذهن‌خوان: شروع", status, location)
+    game = urllib.parse.urlparse(location).path or "/mind/g/نامعتبر"
+
+    # جواب با کلید و مقدار ساختگی نباید بازی را خراب کند
+    for label, payload in (
+        ("کلید ساختگی", {"key": "'; DROP TABLE users; --", "value": "yes"}),
+        ("مقدار ساختگی", {"key": "real", "value": "maybe"}),
+        ("بدون داده", {}),
+    ):
+        status, body, _ = client.post(game + "/answer", payload)
+        record(f"ذهن‌خوان: {label}", status, body)
+
+    status, body, _ = client.post(game + "/back", {})
+    record("ذهن‌خوان: یک قدم عقب", status, body)
+    status, body, _ = client.post(game + "/guess", {"correct": "هیچ", "name": ""})
+    record("ذهن‌خوان: حدس خالی", status, body)
+    status, body, _ = client.post(game + "/giveup", {})
+    record("ذهن‌خوان: نمی‌دانم", status, body)
+    status, body, _ = client.post(game + "/learn", {"name": "ا"})
+    record("ذهن‌خوان: اسم یک‌حرفی", status, body)
+    status, body, _ = client.post(game + "/learn", {"name": "الف" * 2000})
+    record("ذهن‌خوان: اسم بسیار بلند", status, body)
+
+    # مسیرهای خرابکارانه با درصد-انکدینگ فرستاده می‌شوند (مسیر HTTP فقط ASCII می‌پذیرد).
+    for label, path in (
+        ("شناسهٔ ناموجود", "/mind/g/deadbeefdeadbeef"),
+        ("شناسهٔ فارسی", "/mind/g/" + urllib.parse.quote("ندارد")),
+        ("شناسهٔ خالی‌سازی", "/mind/g/%2e%2e%2f%2e%2e%2fetc%2fpasswd"),
+        ("نتیجهٔ ناموجود", "/mind/r/0"),
+    ):
+        status, body, _ = client.get(path)
+        record(f"ذهن‌خوان: {label}", status, body)
+
+    status, body, _ = client.post("/mind/g/invalidgameid1/answer", {"key": "real", "value": "yes"})
+    record("ذهن‌خوان: جواب برای بازی نامعتبر", status, body)
+
+    # بازی شخص دیگر نباید با همان نشست باز شود؛ ولی ساخت بازی تازه باید کار کند.
+    other = Client()
+    status, location, _ = other.post("/mind/start", {})
+    other_game = urllib.parse.urlparse(location).path
+    status, body, _ = client.get(other_game)
+    record("ذهن‌خوان: بازی دیگری", status, body)
+
+
 def cleanup() -> None:
     """دادهٔ آزمون را پاک می‌کند تا اجراهای پیاپی دیتابیس را شلوغ نکنند.
 
@@ -879,6 +930,7 @@ def main() -> int:
     case_races()
     case_toasts()
     case_ads()
+    case_mind()
     case_admin()
 
     cleanup()

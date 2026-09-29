@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}ذهن‌خوان — نشانه{% endblock %}
+
+{% block content %}
+<section class="flow anim-in mind-hero">
+  <a class="back-link" href="/"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> خانه</a>
+
+  <div class="flow__mark mind-mark"><i class="fa-solid fa-hat-wizard" aria-hidden="true"></i></div>
+  <h1 class="flow__title">ذهن‌خوانِ نشانه</h1>
+  <p class="flow__lead">
+    به یک شخصیت معروف فکر کن — بازیگر، ورزشکار، خواننده، دانشمند یا قهرمانِ فیلم و کارتون.
+    من با چند سؤال بله‌و‌نه پیدایش می‌کنم؛ تا وقتی خودت نگویی، اسمش را نمی‌دانم.
+  </p>
+
+  <div class="spec-grid">
+    <div class="spec">
+      <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+      <strong>{{ question_count | fa }} پرسش</strong><span>به‌ترتیب هوشمند</span>
+    </div>
+    <div class="spec">
+      <i class="fa-solid fa-users" aria-hidden="true"></i>
+      <strong>{{ pool_size | fa }} شخصیت</strong><span>در دیتاست نشانه</span>
+    </div>
+    <div class="spec">
+      <i class="fa-regular fa-clock" aria-hidden="true"></i>
+      <strong>۱ دقیقه</strong><span>قبل از حدس</span>
+    </div>
+  </div>
+
+  <ol class="mind-steps">
+    <li class="mind-step">
+      <span class="mind-step__num">۱</span>
+      <span class="mind-step__body">
+        <strong>یک نفر در ذهنت بساز</strong>
+        <small>هر کسی که مشهور باشد؛ از علی دایی تا هری پاتر.</small>
+      </span>
+    </li>
+    <li class="mind-step">
+      <span class="mind-step__num">۲</span>
+      <span class="mind-step__body">
+        <strong>صادقانه جواب بده</strong>
+        <small>بله، نه یا «نمی‌دانم»؛ جواب اشتباه فقط بازی را طولانی می‌کند.</small>
+      </span>
+    </li>
+    <li class="mind-step">
+      <span class="mind-step__num">۳</span>
+      <span class="mind-step__body">
+        <strong>ببین چند سؤال کافی است</strong>
+        <small>اگر اشتباه کردم، اسمش را بنویس؛ همان لحظه یاد می‌گیرم.</small>
+      </span>
+    </li>
+  </ol>
+
+  <form method="post" action="/mind/start">
+    <button class="btn btn--primary btn--block mind-start" type="submit" data-reveal>
+      <i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i> بگذار حدس بزنم
+    </button>
+  </form>
+
+  {% if learned %}
+    <p class="fine-print">
+      <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+      {{ learned | fa }} شخصیت را کاربرانِ نشانه یاد داده‌اند و در فهرست من نشسته است.
+    </p>
+  {% else %}
+    <p class="fine-print">
+      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+      بازی بدون ثبت‌نام هم کار می‌کند؛ حاصلش فقط در همین مرورگر می‌ماند.
+    </p>
+  {% endif %}
+</section>
+{% endblock %}

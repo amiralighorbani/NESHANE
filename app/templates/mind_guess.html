@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}ذهن‌خوان — حدس{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in mind-guess">
+  <div class="quiz-head">
+    <a class="back-link" href="/mind"><i class="fa-solid fa-xmark" aria-hidden="true"></i> بستن</a>
+    <span class="quiz-head__count">با {{ snap.asked | fa }} جواب</span>
+  </div>
+
+  {% if snap.low_confidence %}
+    {# با جواب‌های یکسان چند نفر کنار هم می‌مانند (مثلاً چند فوتبالیست ایرانی)؛
+       پنهان‌کردنشان بی‌انصافی است — همه را نشان می‌دهیم تا کاربر یکی را انتخاب کند. #}
+    <p class="mind-guess__lead">شخصیتِ توی ذهنت یکی از این‌هاست؟</p>
+    <div class="mind-shortlist" data-reveal>
+      {% for item in snap.shortlist %}
+        <form method="post" action="/mind/g/{{ game_id }}/guess">
+          <input type="hidden" name="name" value="{{ item.name }}">
+          <button class="mind-short" type="submit" name="correct" value="yes">
+            <span class="mind-short__icon"><i class="{{ item.icon }}" aria-hidden="true"></i></span>
+            <span class="mind-short__body">
+              <strong>{{ item.name }}</strong>
+              {% if item.about %}<small>{{ item.about }}</small>{% endif %}
+            </span>
+            <span class="mind-short__pct">{{ (item.share * 100) | round | int | fa }}٪</span>
+          </button>
+        </form>
+      {% endfor %}
+    </div>
+    <div class="mind-giveup">
+      <p class="mind-giveup__text">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i> هیچ‌کدام نبود؟ اسمش را خودت بگو تا یاد بگیرم.
+      </p>
+      <form method="post" action="/mind/g/{{ game_id }}/giveup">
+        <button class="btn btn--ghost btn--block" type="submit">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i> اسمش را می‌گویم
+        </button>
+      </form>
+    </div>
+  {% else %}
+    <p class="mind-guess__lead">شخصیتِ توی ذهنت این است؟</p>
+
+    <div class="mind-guess__card" data-reveal>
+      <span class="mind-guess__icon"><i class="{{ guess.icon }}" aria-hidden="true"></i></span>
+      <h1 class="mind-guess__name">{{ guess.name }}</h1>
+      {% if guess.about %}<p class="mind-guess__about">{{ guess.about }}</p>{% endif %}
+
+      <div class="mind-meter">
+        <i style="width: {{ (snap.confidence * 100) | round | int }}%"></i>
+      </div>
+      <small class="mind-meter__label">
+        اطمینانِ من: <b>{{ (snap.confidence * 100) | round | int | fa }}٪</b>
+      </small>
+    </div>
+
+    <form method="post" action="/mind/g/{{ game_id }}/guess">
+      <input type="hidden" name="name" value="{{ guess.name }}">
+      <button class="btn btn--primary btn--block" type="submit" name="correct" value="yes">
+        <i class="fa-solid fa-bullseye" aria-hidden="true"></i> بله، دقیقاً همین است
+      </button>
+      <button class="btn btn--soft btn--block" type="submit" name="correct" value="no">
+        <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i> نه، این نیست
+      </button>
+    </form>
+
+    {% if snap.alternatives %}
+      <div class="mind-alts">
+        <p class="mind-alts__title"><i class="fa-solid fa-shuffle" aria-hidden="true"></i> یا شاید یکی از این‌ها؟</p>
+        <div class="mind-alts__list">
+          {% for alt in snap.alternatives %}
+            <form method="post" action="/mind/g/{{ game_id }}/guess">
+              <input type="hidden" name="name" value="{{ alt.name }}">
+              <button class="mind-alt" type="submit" name="correct" value="yes">
+                <i class="{{ alt.icon }}" aria-hidden="true"></i>
+                <span>{{ alt.name }}</span>
+                <small>{{ (alt.share * 100) | round | int | fa }}٪</small>
+              </button>
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <p class="fine-print">
+      <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+      «نه» بزنی هیچ اشکالی ندارد؛ همان لحظه با گزینهٔ بعدی امتحان می‌کنم.
+    </p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -7,6 +7,16 @@
   <p>ده تست کوتاه روان‌شناسی، کهن‌الگویی و سرشتی؛ نتیجه هر کدام در پروفایلت ذخیره می‌شود.</p>
 </section>
 
+{# بازی ذهن‌خوان هم از جنس خودشناسی و سرگرمی است؛ همان‌جا معرفی می‌شود. #}
+<a class="lp-tile lp-tile--wide anim-in" href="/mind">
+  <span class="lp-tile__icon" style="--tint:#7c5cd6"><i class="fa-solid fa-hat-wizard" aria-hidden="true"></i></span>
+  <span class="lp-tile__wide-body">
+    <strong>ذهن‌خوان</strong>
+    <small>به یک شخصیت معروف فکر کن؛ من با چند سؤال بله/نه پیدایش می‌کنم</small>
+  </span>
+  <span class="lp-tile__tag">بازی</span>
+</a>
+
 {% for group in TEST_GROUPS %}
   {% set members = group.members | select('in', TEST_ORDER) | list %}
   {% if members %}

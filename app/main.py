@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import admin, admin_auth, ads, auth, db, flash, forms as form_utils, life_stats, llm, pwa
+from . import admin, admin_auth, ads, auth, db, flash, forms as form_utils, life_stats, llm, mind as mind_engine, pwa
 from . import personality as personality_engine
 from .content import astrology, lexicon
 from .content import fortunes as fortune_pool
@@ -137,6 +137,40 @@ async def feedback_gate_guard(request: Request, call_next):
             # هیچ‌وقت به‌خاطر یک پاپ‌اپ، صفحهٔ کاربر را نمی‌خوابانیم.
             request.state.feedback_prompt = None
     return await call_next(request)
+
+
+ASSET_PREFIXES = ("/static", "/media", "/sw.js", "/manifest", "/.well-known", "/favicon")
+
+
+@app.middleware("http")
+async def visitor_cookie_guard(request: Request, call_next):
+    """شناسهٔ بازدیدکنندهٔ مهمان را همان اول می‌نشاند.
+
+    هم تبلیغات (سهمیهٔ روزانه، «دیگر نشان نده» و سقف پاپ‌اپ) و هم بازی «ذهن‌خوان»
+    به یک شناسهٔ **ماندگار** برای کاربر بدون حساب نیاز دارند. قبلاً این کوکی فقط
+    در دو مسیر ست می‌شد و اگر کاربر از مسیر دیگری وارد می‌شد، با هر صفحه‌گردانی
+    شناسهٔ تازه می‌گرفت (یعنی سقف‌ها بی‌اثر می‌شدند و بازی «گم» می‌شد).
+    """
+    # شناسه **یک بار** برای همین درخواست ساخته می‌شود و همهٔ مسیرها همان را
+    # می‌بینند (`visitor_id` از `request.state` می‌خواند). بدون این کار، یک مسیر
+    # شناسهٔ تازه می‌گرفت و همین وسط‌کار شناسهٔ تازهٔ دیگری را در کوکی می‌گذاشت؛
+    # نتیجه: بازی «ذهن‌خوان» که با شناسهٔ اول ساخته شده بود، «گم» می‌شد.
+    existing = (request.cookies.get(VISITOR_COOKIE) or "").strip()
+    fresh = existing if (existing and len(existing) <= 40 and existing.isalnum()) else uuid.uuid4().hex[:16]
+    request.state.visitor = fresh
+
+    response = await call_next(request)
+    path = request.url.path
+    if existing or path.startswith(ASSET_PREFIXES) or response.status_code >= 400:
+        return response
+    # اگر خودِ مسیر همین حالا این کوکی را گذاشته باشد، دوباره نمی‌گذاریم.
+    for name, value in response.raw_headers:
+        if name.lower() == b"set-cookie" and VISITOR_COOKIE.encode() in value:
+            return response
+    response.set_cookie(
+        VISITOR_COOKIE, fresh, max_age=180 * 86400, httponly=True, samesite="lax", path="/"
+    )
+    return response
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -1133,7 +1167,15 @@ VISITOR_COOKIE = "nsh_visitor"
 
 
 def visitor_id(request: Request) -> str:
-    """شناسهٔ کوتاهِ مرورگرِ مهمان (اگر نباشد ساخته می‌شود)."""
+    """شناسهٔ کوتاهِ مرورگرِ مهمان (اگر نباشد ساخته می‌شود).
+
+    وسط‌کارِ `visitor_cookie_guard` این شناسه را یک بار برای همان درخواست می‌سازد و
+    این‌جا از `request.state` خوانده می‌شود؛ پس همهٔ بخش‌های یک درخواست (تبلیغ،
+    بازی، ثبت رویداد) دقیقاً یک شناسه می‌بینند.
+    """
+    cached = getattr(request.state, "visitor", None)
+    if cached:
+        return str(cached)
     existing = (request.cookies.get(VISITOR_COOKIE) or "").strip()
     if existing and len(existing) <= 40 and existing.isalnum():
         return existing
@@ -1157,15 +1199,25 @@ def ad_live(request: Request) -> Response:
 
     user = current_user(request)
     visitor = visitor_id(request)
+    user_id = int(user["id"]) if user else None
     try:
         picked = ads.pick(
-            user_id=int(user["id"]) if user else None,
+            user_id=user_id,
             visitor=visitor,
             placement=placement,
         )
     except Exception:
         # تبلیغ نباید باعث خطای صفحه شود.
         picked = None
+
+    if picked and placement == "popup":
+        # همین لحظه که پاپ‌اپ تحویل داده می‌شود، ثبت می‌کنیم تا سقف کلّی
+        # (فاصلهٔ حداقلی و سقف روزانه) درست شمرده شود؛ این رویداد در آمار
+        # «نمایش» پنل شمرده نمی‌شود.
+        try:
+            ads.record(int(picked["id"]), ads.POPUP_EVENT, user_id=user_id, visitor=visitor)
+        except Exception:
+            pass
 
     response = JSONResponse({"ad": ads.public_payload(picked) if picked else None})
     if _visitor_changed(request, visitor):
@@ -1438,6 +1490,266 @@ def _annotate_result(result: Any, attempt_id: int, user: Dict[str, Any]) -> None
         "next_step": str(ai.get("next_step") or ""),
     }
     db.set_attempt_ai_note(attempt_id, result.ai_note, json.dumps(result.ai_meta, ensure_ascii=False))
+
+
+# --------------------------------------------------------------------------- #
+# بازی ذهن‌خوان / mind-reader guessing game
+# --------------------------------------------------------------------------- #
+#
+# بازی مثل آکیناتور: کاربر به یک شخصیت معروف فکر می‌کند و برنامه با چند سؤال
+# بله/نه حدس می‌زند. همهٔ تصمیم‌ها سمت سرور و در `app.mind` است؛ مسیرها فقط
+# وضعیت را ذخیره می‌کنند و صفحه می‌سازند. بازی هم برای کاربر واردشده کار می‌کند و
+# هم برای مهمان (با همان کوکی بازدیدکنندهٔ تبلیغات)، چون قرار است بازیِ لحظه‌ای باشد.
+
+def _mind_pool() -> Dict[str, Any]:
+    """استخر شخصیت‌ها: دیتاست دستی + آن‌چه کاربران یاد داده‌اند."""
+    try:
+        learned = db.mind_learned()
+    except Exception:
+        learned = []
+    return mind_engine.pool(learned)
+
+
+def _mind_owner(request: Request) -> Dict[str, Any]:
+    """مالکِ بازی: کاربر واردشده با شناسهٔ کاربر، مهمان با شناسهٔ مرورگر."""
+    user = current_user(request)
+    return {"user_id": int(user["id"]) if user else None, "visitor": visitor_id(request)}
+
+
+def _mind_game(request: Request, game_id: str, *, owner_only: bool = True) -> Optional[Dict[str, Any]]:
+    """بازی را می‌خواند و مطمئن می‌شود که به همین بازدیدکننده تعلق دارد.
+
+    چرا لازم است: شناسهٔ بازی در آدرس است؛ بدون این کنترل، کسی می‌توانست با
+    عوض‌کردن حرف‌های آدرس، بازی دیگران را ببیند یا تغییر بدهد.
+    """
+    game = db.mind_get(game_id)
+    if not game:
+        return None
+    if not owner_only:
+        return game
+    owner = _mind_owner(request)
+    if owner["user_id"] and game.get("user_id"):
+        return game if int(game["user_id"]) == owner["user_id"] else None
+    if owner["user_id"] and not game.get("user_id") and game.get("visitor") == owner["visitor"]:
+        return game
+    if not owner["user_id"] and not game.get("user_id") and game.get("visitor") == owner["visitor"]:
+        return game
+    return None
+
+
+def _mind_context(request: Request, active: str = "mind") -> Dict[str, Any]:
+    return base_context(request, current_user(request), active)
+
+
+@app.get("/mind", response_class=HTMLResponse)
+def mind_intro(request: Request) -> Response:
+    """صفحهٔ معرفی بازی."""
+    pool_map = _mind_pool()
+    context = _mind_context(request)
+    context["pool_size"] = len(pool_map)
+    context["question_count"] = len(mind_engine.data.QUESTIONS)
+    context["learned"] = max(0, len(pool_map) - len(mind_engine.data.entity_map()))
+    return render(request, "mind_intro.html", context)
+
+
+@app.post("/mind/start")
+def mind_start(request: Request) -> Response:
+    """یک دورِ بازی تازه می‌سازد و کاربر را به اولین سؤال می‌فرستد."""
+    owner = _mind_owner(request)
+    game_id = db.mind_create(owner["user_id"], owner["visitor"])
+    db.log_event("mind_started", owner["user_id"])
+    return flash.redirect(
+        f"/mind/g/{game_id}",
+        "به شخصیتی فکر کن که من بتوانم پیدا کنم؛ اگر واقعی نیست، فیلم و کارتونی هم اشکالی ندارد.",
+        "info",
+        "شروع شد",
+    )
+
+
+def _mind_stuck(request: Request, game: Dict[str, Any], pool_map: Dict[str, Any]) -> Response:
+    """صفحهٔ «نتوانستم»: فرمی که اسم واقعی را می‌گیرد تا یاد بگیریم.
+
+    این صفحه باید با GET باز شود تا رفرش و دکمهٔ بازگشت مرورگر هم کار کند؛ پس
+    یک مسیر جداگانه دارد و «اسمش را می‌گویم» با ریدایرکت به آن می‌رسد.
+    """
+    context = _mind_context(request)
+    context["game_id"] = game["id"]
+    context["snap"] = mind_engine.snapshot(game.get("state") or {}, pool_map)
+    context["path"] = mind_engine.answer_labels(game.get("state") or {}, pool_map)[-8:]
+    context["pool_size"] = len(pool_map)
+    return render(request, "mind_failed.html", context)
+
+
+def _mind_render(request: Request, game: Dict[str, Any], pool_map: Dict[str, Any]) -> Response:
+    """صفحهٔ جاری بازی را بر اساس وضعیت انتخاب می‌کند (سؤال، حدس یا ناتوانی)."""
+    snap = mind_engine.snapshot(game.get("state") or {}, pool_map)
+    context = _mind_context(request)
+    context["game_id"] = game["id"]
+    context["snap"] = snap
+    context["pool_size"] = len(pool_map)
+    context["labels"] = mind_engine.data.TRAIT_LABELS
+    if snap["stage"] == "question":
+        context["question"] = snap["question"]
+        return render(request, "mind_question.html", context)
+    if snap["stage"] == "guess" and snap.get("guess"):
+        context["guess"] = snap["guess"]
+        return render(request, "mind_guess.html", context)
+    # شخصیتی برای حدس نمانده؛ کاربر خودش جواب را می‌گوید.
+    return _mind_stuck(request, game, pool_map)
+
+
+@app.get("/mind/g/{game_id}", response_class=HTMLResponse)
+def mind_game(request: Request, game_id: str) -> Response:
+    """وضعیت جاری بازی (سؤال بعدی یا حدس)."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    return _mind_render(request, game, _mind_pool())
+
+
+@app.post("/mind/g/{game_id}/answer")
+def mind_answer(request: Request, game_id: str, key: str = Form(""), value: str = Form("")) -> Response:
+    """ثبت جواب یک سؤال و رفتن به مرحلهٔ بعد."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    state = mind_engine.answer(game.get("state") or {}, key, value)
+    db.mind_save(game["id"], state, turns=int(game.get("turns") or 0) + 1)
+    return redirect(f"/mind/g/{game['id']}")
+
+
+@app.post("/mind/g/{game_id}/back")
+def mind_back(request: Request, game_id: str) -> Response:
+    """یک قدم عقب (اگر جوابی را اشتباه زده باشد)."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    db.mind_save(game["id"], mind_engine.undo(game.get("state") or {}), turns=int(game.get("turns") or 0))
+    return redirect(f"/mind/g/{game['id']}")
+
+
+@app.post("/mind/g/{game_id}/guess")
+def mind_guess(
+    request: Request,
+    game_id: str,
+    correct: str = Form("no"),
+    name: str = Form(""),
+) -> Response:
+    """جواب کاربر به حدسِ برنامه: درست یا اشتباه."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    state = game.get("state") or {}
+    pool_map = _mind_pool()
+    snap = mind_engine.snapshot(state, pool_map)
+    picked = str(name or "").strip() or str((snap.get("guess") or {}).get("name") or "")
+    if str(correct) == "yes" and picked:
+        state = mind_engine.right_guess(state, picked)
+        guesses = len(state.get("guessed") or [])
+        db.mind_save(game["id"], state, turns=int(game.get("turns") or 0), guesses=guesses, solved=1)
+        db.log_event("mind_solved", int(game["user_id"]) if game.get("user_id") else None)
+        return redirect(f"/mind/r/{game['id']}")
+    # حدس اشتباه: همان شخصیت کنار می‌رود و بازی ادامه پیدا می‌کند.
+    state = mind_engine.wrong_guess(state, picked)
+    db.mind_save(
+        game["id"],
+        state,
+        turns=int(game.get("turns") or 0),
+        guesses=len(state.get("guessed") or []),
+    )
+    return flash.redirect(
+        f"/mind/g/{game['id']}", "اشکالی ندارد؛ حالا با چند سؤال دیگر امتحان می‌کنم.", "info", "نزدیک بود"
+    )
+
+
+@app.get("/mind/g/{game_id}/stuck", response_class=HTMLResponse)
+def mind_stuck_page(request: Request, game_id: str) -> Response:
+    """صفحهٔ «نتوانستم» (بازشدنی با GET تا رفرش و بازگشت مرورگر کار کند)."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    return _mind_stuck(request, game, _mind_pool())
+
+
+@app.post("/mind/g/{game_id}/giveup")
+def mind_giveup(request: Request, game_id: str) -> Response:
+    """کاربر خودش می‌خواهد اسم را بگوید (ادامهٔ سؤال‌ها بی‌فایده است).
+
+    او را به همان صفحهٔ «نتوانستم» می‌فرستیم: یک فرم ساده که اسم را می‌گیرد و
+    یادگیری را انجام می‌دهد. این‌طور یک صفحه، هر دو راهِ پایانِ بازی را پوشش می‌دهد.
+    """
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    return flash.redirect(
+        f"/mind/g/{game['id']}/stuck",
+        "اسمش را بنویس؛ همان لحظه یاد می‌گیرم و دفعهٔ بعد پیدایش می‌کنم.",
+        "info",
+        "باشه",
+    )
+
+
+@app.post("/mind/g/{game_id}/learn")
+def mind_learn(request: Request, game_id: str, name: str = Form("")) -> Response:
+    """پایان بازی بدون حدسِ درست: کاربر اسم واقعی را می‌گوید تا یاد بگیریم."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    state = game.get("state") or {}
+    label = " ".join(str(name or "").split())[:60]
+    if len(label) < 2:
+        return flash.redirect(
+            f"/mind/g/{game['id']}", "اسم شخصیت را بنویس تا این دفعه یاد بگیرم.", "warning", "اسم نبود"
+        )
+    db.mind_learn(game["id"], game.get("user_id"), label, mind_engine.traits_from_answers(state))
+    state = mind_engine.right_guess(state, label)
+    db.mind_save(game["id"], state, turns=int(game.get("turns") or 0), solved=0)
+    db.log_event("mind_learned", int(game["user_id"]) if game.get("user_id") else None)
+    return flash.redirect(
+        f"/mind/r/{game['id']}",
+        "نوشتمش؛ دفعهٔ بعد این شخصیت هم توی فهرست من است.",
+        "success",
+        "یاد گرفتم",
+    )
+
+
+@app.get("/mind/r/{game_id}", response_class=HTMLResponse)
+def mind_result(request: Request, game_id: str) -> Response:
+    """صفحهٔ پایان بازی (حدس درست یا شخصیتی که خودِ کاربر گفت)."""
+    game = _mind_game(request, game_id)
+    if not game:
+        return flash.redirect("/mind", "این بازی پیدا نشد؛ یک بازی تازه شروع کن.", "warning", "بازی گم شد")
+    state = game.get("state") or {}
+    pool_map = _mind_pool()
+    snap = mind_engine.snapshot(state, pool_map)
+    picked = (state.get("guessed") or [None])[-1]
+    context = _mind_context(request)
+    context["game_id"] = game["id"]
+    context["snap"] = snap
+    context["solution"] = (
+        {
+            "name": picked,
+            "icon": mind_engine.icon_of(pool_map, picked),
+            "about": mind_engine.about_of(pool_map, picked),
+        }
+        if picked
+        else None
+    )
+    context["path"] = mind_engine.answer_labels(state, pool_map)
+    context["guesses"] = list(snap.get("guessed") or [])
+    context["pool_size"] = len(pool_map)
+    return render(request, "mind_result.html", context)
+
+
+@app.post("/mind/g/{game_id}/again")
+def mind_again(request: Request, game_id: str) -> Response:
+    """بازیِ تازه با همان بازیکن (بدون رفتن به صفحهٔ معرفی)."""
+    owner = _mind_owner(request)
+    new_id = db.mind_create(owner["user_id"], owner["visitor"])
+    db.log_event("mind_started", owner["user_id"])
+    return flash.redirect(
+        f"/mind/g/{new_id}", "یک شخصیت دیگر در ذهنت بیاور.", "info", "دور تازه"
+    )
 
 
 # --------------------------------------------------------------------------- #

@@ -16,6 +16,24 @@
   </div>
 </div>
 
+{# سقف کلّی پاپ‌اپ: به تنظیم هر تبلیغ ربطی ندارد و از محیط خوانده می‌شود. #}
+{% if popup_cap %}
+<div class="panel panel--quiet">
+  <p class="muted">
+    <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+    <b>سقف کلّی پاپ‌اپ</b> (مستقل از تنظیم هر تبلیغ):
+    {% if popup_cap.cooldown_minutes %}
+      هر نفر حداکثر هر <b>{{ popup_cap.cooldown_minutes | fa }}</b> دقیقه یک پاپ‌اپ
+    {% else %}
+      بدون فاصلهٔ زمانی بین پاپ‌اپ‌ها
+    {% endif %}
+    {% if popup_cap.per_day %}و روزی حداکثر <b>{{ popup_cap.per_day | fa }}</b> بار{% endif %}.
+    با متغیرهای محیطی <span class="code">NESHANE_AD_COOLDOWN_MINUTES</span> و
+    <span class="code">NESHANE_AD_POPUPS_PER_DAY</span> تغییر می‌کند؛ صفر یعنی بی‌سقف.
+  </p>
+</div>
+{% endif %}
+
 {% if error == 'title' %}<div class="alert alert--error">عنوان تبلیغ لازم است.</div>{% endif %}
 {% if error == 'link' %}<div class="alert alert--error">لینک باید با http:// یا https:// شروع شود.</div>{% endif %}
 {% if error == 'date' %}<div class="alert alert--error">{{ error_text or 'تاریخ‌ها را درست وارد کن.' }}</div>{% endif %}

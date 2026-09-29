@@ -700,7 +700,42 @@
    *
    * نکتهٔ مهم: پاپ‌اپ امتیاز اولویت دارد؛ اگر آن باز باشد، تبلیغ را حتی
    * نمی‌گیریم تا دو پنجره روی هم نیفتند و «نمایش» بی‌مورد ثبت نشود.
+   *
+   * نکتهٔ دوم: تصمیمِ «الان وقتِ نمایش هست؟» کاملاً سمت سرور است و آن‌جا یک سقف
+   * کلّی دارد (فاصلهٔ حداقلی بین دو پاپ‌اپ + سقف روزانه). این‌جا هم یک لایهٔ
+   * احتیاطی گذاشته‌ایم تا با هر کلیک صفحه، از سرور پرس‌وجو نکنیم: در هر نشست
+   * حداکثر دو پاپ‌اپ و بین دو پاپ‌اپ حداقل `AD_COOLDOWN_MINUTES` دقیقه فاصله.
    */
+  var AD_COOLDOWN_MINUTES = 45; // هم‌سو با NESHANE_AD_COOLDOWN_MINUTES سرور
+  var AD_SESSION_LIMIT = 2; // در هر نشست مرورگر، سقف پاپ‌اپ
+  var AD_LAST_KEY = "neshane_ad_last_shown";
+  var AD_SESSION_KEY = "neshane_ad_session_count";
+
+  function adSessionCount() {
+    try {
+      return parseInt(window.sessionStorage.getItem(AD_SESSION_KEY) || "0", 10) || 0;
+    } catch (err) {
+      return 0;
+    }
+  }
+
+  /* سقف محلی: هم تعداد در این نشست، هم فاصله از آخرین پاپ‌اپ. */
+  function adClientAllowed() {
+    if (adSessionCount() >= AD_SESSION_LIMIT) return false;
+    var last = parseInt(storageGet(AD_LAST_KEY) || "0", 10);
+    if (!last) return true;
+    return Date.now() - last >= AD_COOLDOWN_MINUTES * 60 * 1000;
+  }
+
+  function adNoteShown() {
+    storageSet(AD_LAST_KEY, String(Date.now()));
+    try {
+      window.sessionStorage.setItem(AD_SESSION_KEY, String(adSessionCount() + 1));
+    } catch (err) {
+      /* حالت خصوصی مرورگر */
+    }
+  }
+
   function setupAdPopup() {
     var modal = document.getElementById("adModal");
     if (!modal || !window.fetch) return;
@@ -881,6 +916,9 @@
     window.setTimeout(function () {
       var rateOpen = document.querySelector("[data-rate-modal]:not([hidden])");
       if (rateOpen && !rateOpen.hidden) return;
+      // لایهٔ احتیاطی محلی: اگر همین نزدیکی پاپ‌اپی دیده یا سقف نشست پر شده،
+      // حتی از سرور هم نمی‌پرسیم. سرور جدای از این، سقف خودش را دارد.
+      if (!adClientAllowed()) return;
       fetch("/api/ad?placement=popup", { headers: { "X-Requested-With": "fetch" } })
         .then(function (response) { return response.json(); })
         .then(function (data) {
@@ -888,6 +926,7 @@
           ad = data.ad;
           var node = build(ad);
           open(ad, node);
+          adNoteShown();
           sendEvent("impression");
         })
         .catch(function () { /* خطای تبلیغ هیچ‌وقت به کاربر نشان داده نمی‌شود */ });

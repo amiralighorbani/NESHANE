@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}ذهن‌خوان — نتیجه{% endblock %}
+{% block bottom_nav %}{% endblock %}
+
+{% block content %}
+<section class="flow anim-in mind-result" style="--accent: #6b4fbb">
+  <div class="mind-result__spark">
+    <i class="fa-solid fa-sparkles" aria-hidden="true"></i>
+  </div>
+  <p class="mind-result__hello">پیدایش کردم!</p>
+
+  {% if solution %}
+    <div class="mind-result__card" data-reveal>
+      <span class="mind-result__icon"><i class="{{ solution.icon }}" aria-hidden="true"></i></span>
+      <h1 class="mind-result__name">{{ solution.name }}</h1>
+      {% if solution.about %}<p class="mind-result__about">{{ solution.about }}</p>{% endif %}
+    </div>
+  {% endif %}
+
+  <div class="spec-grid">
+    <div class="spec">
+      <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+      <strong>{{ snap.asked | fa }} پرسش</strong><span>تا رسیدن به جواب</span>
+    </div>
+    <div class="spec">
+      <i class="fa-solid fa-bullseye" aria-hidden="true"></i>
+      <strong>{{ (snap.confidence * 100) | round | int | fa }}٪</strong><span>اطمینانِ نهایی</span>
+    </div>
+    <div class="spec">
+      <i class="fa-solid fa-users" aria-hidden="true"></i>
+      <strong>{{ pool_size | fa }} نفر</strong><span>در فهرست من</span>
+    </div>
+  </div>
+
+  {% if guesses and guesses | length > 1 %}
+    <p class="mind-result__extra">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      تا رسیدن به او، {{ (guesses | length - 1) | fa }} گزینهٔ دیگر را هم امتحان کردیم.
+    </p>
+  {% endif %}
+
+  {% if path %}
+    <div class="mind-path">
+      <details>
+        <summary><i class="fa-solid fa-route" aria-hidden="true"></i> مسیر پرسش‌ها را ببین</summary>
+        {% for text, verb in path %}
+          <div class="mind-path__row">
+            <span>{{ text }}</span>
+            <b class="mind-path__verb mind-path__verb--{{ 'yes' if verb == 'بله' else ('no' if verb == 'نه' else 'maybe') }}">{{ verb }}</b>
+          </div>
+        {% endfor %}
+      </details>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/mind/g/{{ game_id }}/again">
+    <button class="btn btn--primary btn--block" type="submit">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> یک شخصیت دیگر
+    </button>
+  </form>
+  <a class="btn btn--ghost btn--block" href="/journey">
+    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> حالا یک فال بگیر
+  </a>
+</section>
+{% endblock %}

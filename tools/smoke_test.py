@@ -838,11 +838,24 @@ def main() -> int:
         status, _, landing = visitor.get("/")
         check("بنر تبلیغ در صفحهٔ خانه می‌آید", status == 200 and "ad-banner" in landing, str(status))
 
-        # خاموش‌کردن از پنل باید همان لحظه اثر بگذارد
+        # سقف کلّی پاپ‌اپ: همین بازدیدکننده نباید بلافاصله پاپ‌اپ تازه بگیرد...
+        status, _, again = visitor.get("/api/ad?placement=popup")
+        check("پاپ‌اپ پشت‌سرهم به یک نفر داده نمی‌شود", (json.loads(again or "{}").get("ad")) is None, again[:80])
+        # ... ولی سقفِ یک نفر نباید بازدیدکنندهٔ دیگری را ببندد.
+        other = Client()
+        status, _, other_json = other.get("/api/ad?placement=popup")
+        other_ad = json.loads(other_json or "{}").get("ad") or {}
+        check("سقف پاپ‌اپ بازدیدکنندهٔ دیگر را نمی‌بندد", other_ad.get("id") == ad_id, other_json[:80])
+
+        # خاموش‌کردن از پنل باید همان لحظه اثر بگذارد. با بازدیدکنندهٔ تازه چک
+        # می‌کنیم تا سقف پاپ‌اپ نتیجه را الکی «خالی» نکند.
         status, _, _ = admin.post(f"{panel}ads/{ad_id}/toggle", {})
         check("خاموش‌کردن تبلیغ", status == 303, str(status))
-        status, _, ad_json = visitor.get("/api/ad?placement=popup")
-        check("تبلیغ خاموش نمایش داده نمی‌شود", (json.loads(ad_json or "{}").get("ad")) is None, ad_json[:80])
+        status, _, ad_json = Client().get("/api/ad?placement=popup")
+        picked = json.loads(ad_json or "{}").get("ad") or {}
+        # ممکن است تبلیغ دیگری از قبل در دیتابیس محلی باشد؛ پس مشخصاً همین تبلیغ
+        # خاموش‌شده را چک می‌کنیم، نه «هیچ تبلیغی نیاید».
+        check("تبلیغ خاموش نمایش داده نمی‌شود", picked.get("id") != ad_id, ad_json[:80])
 
         status, _, _ = admin.post(f"{panel}ads/{ad_id}/toggle", {})
         check("روشن‌کردن دوبارهٔ تبلیغ", status == 303, str(status))
@@ -856,6 +869,59 @@ def main() -> int:
 
     status, _, ads_csv = admin.get(f"{panel}export/ads.csv")
     check("خروجی CSV تبلیغات", status == 200 and "impressions" in ads_csv, str(status))
+
+    # --- بازی «ذهن‌خوان»: یک دور کامل با بازیکن مهمان ---
+    from app import mind as mind_engine
+
+    play = Client()
+    status, _, intro = play.get("/mind")
+    check("صفحهٔ معرفی ذهن‌خوان باز می‌شود", status == 200 and "ذهن‌خوان" in intro, str(status))
+
+    status, location, _ = play.post("/mind/start", {})
+    check("شروع بازی ذهن‌خوان", status == 303 and "/mind/g/" in location, f"{status} {location}")
+    # سرور ممکن است مسیر نسبی بفرستد؛ با همان ابزار استاندارد مسیر را برمی‌داریم.
+    game_path = urllib.parse.urlparse(location).path
+
+    target = "علی دایی"
+    values = mind_engine.pool()[target]["values"]
+    guess = ""
+    for _ in range(30):
+        status, _, page = play.get(game_path)
+        if 'name="correct"' in page:
+            found = re.search(r'name="name" value="([^"]+)"', page)
+            guess = found.group(1) if found else ""
+            break
+        found = re.search(r'name="key" value="([^"]+)"', page)
+        if not found:
+            break
+        trait = int(values.get(found.group(1)) or 0)
+        answer = "unknown" if trait == 0 else ("yes" if trait == 1 else "no")
+        status, _, _ = play.post(game_path + "/answer", {"key": found.group(1), "value": answer})
+    check("ذهن‌خوان به مرحلهٔ حدس می‌رسد", bool(guess), guess)
+
+    status, location, _ = play.post(game_path + "/guess", {"name": guess, "correct": "yes"})
+    check("ثبت حدس درست", status == 303 and "/mind/r/" in location, f"{status} {location}")
+    status, _, result = play.get(urllib.parse.urlparse(location).path)
+    check("صفحهٔ نتیجهٔ ذهن‌خوان", status == 200 and guess in result, str(status))
+    check("ذهن‌خوان شخصیت درست را حدس زد", guess == target, guess)
+
+    # بانک سؤال: حدس اشتباه باید راه را ادامه بدهد، و «اسمش را می‌گویم» باید یاد بگیرد.
+    status, location, _ = play.post("/mind/start", {})
+    game2 = urllib.parse.urlparse(location).path
+    status, location, _ = play.post(game2 + "/giveup", {})
+    check("دکمهٔ «اسمش را می‌گویم»", status == 303 and location.endswith("/stuck"), f"{status} {location}")
+    status, _, page = play.get(urllib.parse.urlparse(location).path)
+    check("صفحهٔ «نتوانستم» با فرم یادگیری", status == 200 and 'name="name"' in page, str(status))
+    status, location, _ = play.post(game2 + "/learn", {"name": "شخصیت آزمایشی نشانه"})
+    check("یادگیری شخصیت تازه", status == 303 and "/mind/r/" in location, f"{status} {location}")
+    check("شخصیت تازه در دیتابیس نشست", any(
+        row["name"] == "شخصیت آزمایشی نشانه" for row in app_db_ads.mind_learned()
+    ))
+
+    # بازی دیگران قابل دیدن نیست (شناسهٔ بازی در آدرس است).
+    intruder = Client()
+    status, location, _ = intruder.get(game2)
+    check("بازی دیگران برای بقیه باز نمی‌شود", status == 303 and location.endswith("/mind"), f"{status} {location}")
 
     stranger = Client()
     status, location, _ = stranger.get(f"{panel}dashboard")
